@@ -2,10 +2,10 @@
   "firmware_url": null,
   "pr_number": 3,
   "preview_url": null,
-  "request_id": "specter-pr-3-da1932643d2caa10743892758ae94456f98903d9-37204656518-1",
-  "run_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37204663600",
+  "request_id": "specter-pr-3-38578756092d3feb49639cb0cda7fe06012fda53-37207920835-1",
+  "run_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37207927910",
   "source_repository": "schnuartz-ai/specter-diy",
-  "source_sha": "da1932643d2caa10743892758ae94456f98903d9",
-  "source_updated_at": "2026-10-04T13:10:10.000000Z",
+  "source_sha": "38578756092d3feb49639cb0cda7fe06012fda53",
+  "source_updated_at": "2026-10-04T14:04:31.000000Z",
   "status": "failure"
 }
