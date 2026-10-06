@@ -1,5 +1,5 @@
 {
-  "artifact_set_sha256": "24daf577a69af1ef5933a18ed14becf38832d6740d8abf84b962a1408c3d4cd7",
+  "artifact_set_sha256": "a925c206aab55a025eb0368d17d29bb8a6193d6e1aa0244be120ea2d20842ee2",
   "artifacts": {
     "micropython.data": {
       "bytes": 22486,
@@ -7,7 +7,7 @@
     },
     "micropython.wasm": {
       "bytes": 9021640,
-      "sha256": "da4d0934aaf743b6440674f0b6fbc1c0fc84b0ef7e969583cb5a2a06acb5d0c1"
+      "sha256": "905ae1307a05bf8b030f84b98bea99d936c6f8362e0acceb59e42974ec37830b"
     },
     "micropython.js": {
       "bytes": 430974,
@@ -16,7 +16,7 @@
   },
   "branch": null,
   "build_type": "Browser / WebAssembly",
-  "built_at": "2026-10-06T10:54:39.160194+00:00",
+  "built_at": "2026-10-06T11:42:00.004691+00:00",
   "capabilities": {
     "smartcard": true,
     "smartcard_type": "MemoryCard"
@@ -29,7 +29,7 @@
     "url": "https://github.com/schnuartz-ai/specter-diy-web-simulator"
   },
   "source": {
-    "commit": "4be723a76c0561dcff15e6d4b538a2d6523cd399",
+    "commit": "d928540e200bb63123c864dda9b550daf587d2a2",
     "repository": "schnuartz-ai/specter-diy",
     "url": "https://github.com/schnuartz-ai/specter-diy"
   },
