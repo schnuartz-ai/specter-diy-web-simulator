@@ -1,0 +1,9 @@
+{
+  "latest_action": "delete",
+  "latest_request_id": "specter-pr-7-d928540e200bb63123c864dda9b550daf587d2a2-37458170028-1",
+  "latest_source_sha": "d928540e200bb63123c864dda9b550daf587d2a2",
+  "latest_source_updated_at": "2026-10-06T11:42:14.000000Z",
+  "run_attempt": 1,
+  "status": "deleted",
+  "workflow_run_id": 37458182909
+}
