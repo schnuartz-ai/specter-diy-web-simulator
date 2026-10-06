@@ -1,0 +1,11 @@
+{
+  "firmware_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37456475360/artifacts/11409704611",
+  "pr_number": 6,
+  "preview_url": "https://schnuartz-ai.github.io/specter-diy-web-simulator/pr/6/",
+  "request_id": "specter-pr-6-5981b3abc7719ddb47922def3fa14fc3ca5cd89a-37456462340-1",
+  "run_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37456475360",
+  "source_repository": "schnuartz-ai/specter-diy",
+  "source_sha": "5981b3abc7719ddb47922def3fa14fc3ca5cd89a",
+  "source_updated_at": "2026-10-06T11:26:51.000000Z",
+  "status": "success"
+}
