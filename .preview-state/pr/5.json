@@ -1,9 +1,9 @@
 {
-  "latest_action": "build",
-  "latest_request_id": "specter-pr-5-4be723a76c0561dcff15e6d4b538a2d6523cd399-37455210018-1",
+  "latest_action": "delete",
+  "latest_request_id": "specter-pr-5-4be723a76c0561dcff15e6d4b538a2d6523cd399-37456337553-1",
   "latest_source_sha": "4be723a76c0561dcff15e6d4b538a2d6523cd399",
-  "latest_source_updated_at": "2026-10-06T11:15:32.000000Z",
+  "latest_source_updated_at": "2026-10-06T11:25:46.000000Z",
   "run_attempt": 1,
-  "status": "success",
-  "workflow_run_id": 37455224848
+  "status": "deleted",
+  "workflow_run_id": 37456353878
 }
