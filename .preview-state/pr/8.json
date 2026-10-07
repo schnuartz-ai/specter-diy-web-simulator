@@ -1,0 +1,9 @@
+{
+  "latest_action": "build",
+  "latest_request_id": "specter-pr-8-aef8cb4095ea097f0c0f7249567dc205bc14624d-37600192725-1",
+  "latest_source_sha": "aef8cb4095ea097f0c0f7249567dc205bc14624d",
+  "latest_source_updated_at": "2026-10-07T09:22:43.000000Z",
+  "run_attempt": 1,
+  "status": "success",
+  "workflow_run_id": 37600210832
+}
