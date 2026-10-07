@@ -5,13 +5,13 @@
   "head_ref": "codex/e2e-preview-lifecycle-20261004",
   "head_repository": "schnuartz-ai/specter-diy",
   "latest_action": "build",
-  "latest_request_id": "specter-pr-3-f7a1b86f21c0fac32654f80432c34fe52f23ad05-37657380311-1",
-  "latest_source_sha": "f7a1b86f21c0fac32654f80432c34fe52f23ad05",
-  "latest_source_updated_at": "2026-10-07T17:13:18.000000Z",
+  "latest_request_id": "specter-pr-3-add18f40fd0098907e6633f5fc228726a7c232a2-37659157637-1",
+  "latest_source_sha": "add18f40fd0098907e6633f5fc228726a7c232a2",
+  "latest_source_updated_at": "2026-10-07T17:27:04.000000Z",
   "run_attempt": 1,
   "simulator_repository": "schnuartz-ai/specter-diy-web-simulator",
   "simulator_sha": "e9ff8c8099c9422a2f495b024d95f961a2c17fb9",
-  "status": "success",
+  "status": "failure",
   "successful_previews": [
     {
       "firmware_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37657402842/artifacts/11499596794",
@@ -36,5 +36,5 @@
       "workflow_run_id": 37654994364
     }
   ],
-  "workflow_run_id": 37657402842
+  "workflow_run_id": 37659177786
 }
