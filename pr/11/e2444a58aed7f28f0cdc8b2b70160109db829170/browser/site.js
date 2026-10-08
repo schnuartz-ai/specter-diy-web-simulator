@@ -1172,8 +1172,10 @@ function formatBuildPresentation(manifest) {
     typeof manifest.fork === 'object' ? manifest.fork.repository : manifest.fork);
   const isFork = Boolean(forkValue) || manifest.is_fork === true || manifest.fork === true;
   const cleanVersion = versionLabel ? String(versionLabel).replace(/^v/i, '') : '';
+  // Show the exact firmware source revision on every build, not only when
+  // optional PR metadata is present (immutable PR previews usually omit it).
   const topLabel = ['GitHub', isFork && 'Fork', cleanVersion && `v${cleanVersion}`, prLabel,
-    prLabel && commit.slice(0, 7)].filter(Boolean).join(' · ');
+    commit && commit.slice(0, 7)].filter(Boolean).join(' · ');
   const context = [
     cleanVersion && `Version: v${cleanVersion}`,
     manifest.branch && `Branch: ${manifest.branch}`,
@@ -1188,7 +1190,9 @@ function updateBuildMetadata(manifest) {
   const buildPresentation = formatBuildPresentation(manifest);
   const sourceCommitLink = $('#source-commit-link');
   if (sourceCommitLink) {
-    sourceCommitLink.href = buildPresentation.repositoryUrl;
+    // The label includes a commit ID: its link must resolve to that exact
+    // validated Specter source commit rather than just the repository homepage.
+    sourceCommitLink.href = buildPresentation.commitUrl;
     sourceCommitLink.textContent = buildPresentation.topLabel;
   }
   const buildRepositoryLink = $('#build-repository-link');
