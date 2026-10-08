@@ -5,13 +5,13 @@
   "head_ref": "master",
   "head_repository": "cryptoadvance/specter-diy",
   "latest_action": "build",
-  "latest_request_id": "specter-pr-10-bec1ab108d6559a35b9cf8b1ea41da1f5731918a-37768701599-1",
+  "latest_request_id": "specter-pr-10-bec1ab108d6559a35b9cf8b1ea41da1f5731918a-37771150228-1",
   "latest_source_sha": "bec1ab108d6559a35b9cf8b1ea41da1f5731918a",
-  "latest_source_updated_at": "2026-10-08T11:13:57.000000Z",
+  "latest_source_updated_at": "2026-10-08T11:36:14.000000Z",
   "run_attempt": 1,
   "simulator_repository": "schnuartz-ai/specter-diy-web-simulator",
-  "simulator_sha": "674adb5658841c0db299d3b257908f791d0e4e59",
-  "status": "success",
+  "simulator_sha": "f57765c69b8b36cc80a22fcc3925f4c22287dabd",
+  "status": "failure",
   "successful_previews": [
     {
       "firmware_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37768716235/artifacts/11547017516",
@@ -26,5 +26,5 @@
       "workflow_run_id": 37768716235
     }
   ],
-  "workflow_run_id": 37768716235
+  "workflow_run_id": 37771165948
 }
