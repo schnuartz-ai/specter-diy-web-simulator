@@ -5,26 +5,26 @@
   "head_ref": "codex/paired-preview-dispatch",
   "head_repository": "schnuartz-ai/specter-diy",
   "latest_action": "build",
-  "latest_request_id": "specter-pr-4-88a8907c95e45c7f960b5575596e270a30897058-37778382005-1",
-  "latest_source_sha": "88a8907c95e45c7f960b5575596e270a30897058",
-  "latest_source_updated_at": "2026-10-08T12:38:59.000000Z",
+  "latest_request_id": "specter-pr-4-7da453c71ed04c0684b0ae4d18617ffc2662faac-37791899702-1",
+  "latest_source_sha": "7da453c71ed04c0684b0ae4d18617ffc2662faac",
+  "latest_source_updated_at": "2026-10-08T14:22:16.000000Z",
   "run_attempt": 1,
   "simulator_repository": "schnuartz-ai/specter-diy-web-simulator",
   "simulator_sha": "9332380cdfabcaa5e3806aa673d761cd617324d2",
   "status": "success",
   "successful_previews": [
     {
-      "firmware_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37778398262/artifacts/11550783361",
-      "head_sha": "88a8907c95e45c7f960b5575596e270a30897058",
-      "preview_url": "https://schnuartz-ai.github.io/specter-diy-web-simulator/pr/4/88a8907c95e45c7f960b5575596e270a30897058/",
-      "request_id": "specter-pr-4-88a8907c95e45c7f960b5575596e270a30897058-37778382005-1",
+      "firmware_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37791917026/artifacts/11556956931",
+      "head_sha": "7da453c71ed04c0684b0ae4d18617ffc2662faac",
+      "preview_url": "https://schnuartz-ai.github.io/specter-diy-web-simulator/pr/4/7da453c71ed04c0684b0ae4d18617ffc2662faac/",
+      "request_id": "specter-pr-4-7da453c71ed04c0684b0ae4d18617ffc2662faac-37791899702-1",
       "run_attempt": 1,
-      "run_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37778398262",
+      "run_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37791917026",
       "simulator_sha": "9332380cdfabcaa5e3806aa673d761cd617324d2",
       "source_repository": "schnuartz-ai/specter-diy",
-      "source_updated_at": "2026-10-08T12:38:59.000000Z",
-      "workflow_run_id": 37778398262
+      "source_updated_at": "2026-10-08T14:22:16.000000Z",
+      "workflow_run_id": 37791917026
     }
   ],
-  "workflow_run_id": 37778398262
+  "workflow_run_id": 37791917026
 }
