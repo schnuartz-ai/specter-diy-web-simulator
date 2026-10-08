@@ -599,6 +599,33 @@ jobs:
           SPECTER_PREVIEW_APP_TOKEN: ${{ steps.specter-app-token.outputs.token }}
           SPECTER_PREVIEW_APP_SLUG: ${{ steps.specter-app-token.outputs.app-slug }}
         run: python3 simulator/web/tools/report_preview.py
+      # FORK TEST ONLY. No bot credential reaches untrusted build jobs.
+      - name: Report preview as machine user (fork test)
+        id: report-fork-bot
+        if: >-
+          needs.validate.outputs.base_repository == 'schnuartz-ai/specter-diy' &&
+          github.repository == 'schnuartz-ai/specter-diy-web-simulator' &&
+          vars.SPECTER_PREVIEW_BOT_LOGIN != '' &&
+          steps.publish.outputs.applied == 'true' &&
+          steps.deployment.outcome == 'success'
+        env:
+          REQUEST_ID: ${{ needs.validate.outputs.request_id }}
+          ACTION: ${{ needs.validate.outputs.action }}
+          BASE_REPOSITORY: ${{ needs.validate.outputs.base_repository }}
+          BASE_SHA: ${{ needs.validate.outputs.base_sha }}
+          BASE_REF: ${{ needs.validate.outputs.base_ref }}
+          PR_NUMBER: ${{ needs.validate.outputs.pr_number }}
+          HEAD_REPOSITORY: ${{ needs.validate.outputs.head_repository }}
+          HEAD_SHA: ${{ needs.validate.outputs.head_sha }}
+          HEAD_REF: ${{ needs.validate.outputs.head_ref }}
+          SOURCE_UPDATED_AT: ${{ needs.validate.outputs.source_updated_at }}
+          SIMULATOR_REPOSITORY: ${{ github.repository }}
+          SIMULATOR_SHA: ${{ github.sha }}
+          BUILD_RESULT: ${{ steps.publish.outputs.status }}
+          PAGES_DIR: ${{ github.workspace }}/pages
+          SPECTER_PREVIEW_BOT_TOKEN: ${{ secrets.SPECTER_PREVIEW_BOT_TOKEN }}
+          SPECTER_PREVIEW_BOT_LOGIN: ${{ vars.SPECTER_PREVIEW_BOT_LOGIN }}
+        run: python3 simulator/web/tools/report_fork_machine_user.py
       - name: Remove replaced PR firmware artifacts
         id: prune-firmware
         if: >-
@@ -608,7 +635,10 @@ jobs:
           steps.publish.outputs.firmware_artifacts_to_prune != '[]' &&
           (steps.publish.outputs.applied != 'true' ||
            needs.validate.outputs.base_repository != 'cryptoadvance/specter-diy' ||
-           steps.report.outcome == 'success')
+           steps.report.outcome == 'success') &&
+          (needs.validate.outputs.base_repository != 'schnuartz-ai/specter-diy' ||
+           vars.SPECTER_PREVIEW_BOT_LOGIN == '' ||
+           steps.report-fork-bot.outcome == 'success')
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
