@@ -1,0 +1,27 @@
+{
+  "failed_source_sha": null,
+  "firmware_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37772307534/artifacts/11547994428",
+  "latest_run_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37772307534",
+  "pr_number": 11,
+  "preview_url": "https://schnuartz-ai.github.io/specter-diy-web-simulator/pr/11/93ff472da31038eb46da8afbe7a579c1e8b18f22/",
+  "request_id": "specter-pr-11-93ff472da31038eb46da8afbe7a579c1e8b18f22-37772290433-1",
+  "run_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37772307534",
+  "source_repository": "schnuartz-ai/specter-diy",
+  "source_sha": "93ff472da31038eb46da8afbe7a579c1e8b18f22",
+  "source_updated_at": "2026-10-08T11:46:30.000000Z",
+  "status": "success",
+  "successful_previews": [
+    {
+      "firmware_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37772307534/artifacts/11547994428",
+      "head_sha": "93ff472da31038eb46da8afbe7a579c1e8b18f22",
+      "preview_url": "https://schnuartz-ai.github.io/specter-diy-web-simulator/pr/11/93ff472da31038eb46da8afbe7a579c1e8b18f22/",
+      "request_id": "specter-pr-11-93ff472da31038eb46da8afbe7a579c1e8b18f22-37772290433-1",
+      "run_attempt": 1,
+      "run_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/37772307534",
+      "simulator_sha": "f57765c69b8b36cc80a22fcc3925f4c22287dabd",
+      "source_repository": "schnuartz-ai/specter-diy",
+      "source_updated_at": "2026-10-08T11:46:30.000000Z",
+      "workflow_run_id": 37772307534
+    }
+  ]
+}
