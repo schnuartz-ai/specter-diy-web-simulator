@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Security regression tests for fork-only machine-user commenting."""
+"""Security and Markdown regression tests for fork machine-user comments."""
 import json
 import sys
 import unittest
@@ -28,7 +28,14 @@ def request(action="build"):
     }
 
 
-def state(req, outcome="success"):
+def state(req, outcome="success", history=None):
+    preview = {
+        "head_sha": req["head_sha"],
+        "preview_url": "https://schnuartz-ai.github.io/specter-diy-web-simulator/pr/12/" + HEAD_SHA + "/",
+        "firmware_url": "https://github.com/" + bot.SIMULATOR + "/actions/runs/99/artifacts/123",
+        "run_url": "https://github.com/" + bot.SIMULATOR + "/actions/runs/99",
+        "workflow_run_id": 99,
+    }
     return {
         "latest_request_id": req["request_id"],
         "latest_action": req["action"],
@@ -39,13 +46,7 @@ def state(req, outcome="success"):
         "base_ref": req["base_ref"], "head_repository": req["head_repository"],
         "head_ref": req["head_ref"],
         "simulator_repository": bot.SIMULATOR, "simulator_sha": SIM_SHA,
-        "successful_previews": [{
-            "head_sha": req["head_sha"],
-            "preview_url": "https://schnuartz-ai.github.io/specter-diy-web-simulator/pr/12/" + HEAD_SHA + "/",
-            "firmware_url": "https://github.com/" + bot.SIMULATOR + "/actions/runs/99/artifacts/123",
-            "run_url": "https://github.com/" + bot.SIMULATOR + "/actions/runs/99",
-            "workflow_run_id": 99,
-        }],
+        "successful_previews": [preview] if history is None else history,
     }
 
 
@@ -82,6 +83,8 @@ class MachineUserReporterTests(unittest.TestCase):
             return self.comments
         if method == "POST":
             return {"id": 51, "user": {"login": USER}}
+        if method == "PATCH":
+            return {"id": int(path.rsplit("/", 1)[-1]), "user": {"login": USER}}
         if method == "DELETE":
             return None
         raise AssertionError("Unexpected API: " + method + " " + path)
@@ -92,81 +95,143 @@ class MachineUserReporterTests(unittest.TestCase):
                           outcome, TOKEN, USER, request_fn or self.mock_api,
                           pull_fetcher=lambda *_: live_pr(req))
 
-    def test_own_marked_comment_only_and_post_before_delete(self):
+    def writes(self):
+        return [(method, path) for method, path, *_ in self.calls
+                if method in ("POST", "PATCH", "DELETE")]
+
+    def test_existing_comment_patched_in_place_without_duplicate(self):
         req = request()
         self.state_path.write_text(json.dumps(state(req)))
-        result = self.invoke()
-        self.assertEqual(result["removed_comments"], 1)
-        writes = [(a, b) for a, b, _, _ in self.calls if a in ("POST", "DELETE")]
-        self.assertEqual(writes, [
-            ("POST", f"/repos/{bot.TARGET}/issues/12/comments"),
-            ("DELETE", f"/repos/{bot.TARGET}/issues/comments/11"),
+        output = self.invoke()
+        self.assertTrue(output["applied"])
+        self.assertEqual(output["removed_comments"], 0)
+        self.assertEqual(self.writes(), [
+            ("PATCH", f"/repos/{bot.TARGET}/issues/comments/11")
         ])
-        posted = [d["body"] for a, _, _, d in self.calls if a == "POST"][0]
-        self.assertIn("Open browser simulator", posted)
-        self.assertIn("Firmware artifact", posted)
-        self.assertIn("Never enter a real seed phrase", posted)
+        body = [d["body"] for a, _, _, d in self.calls if a == "PATCH"][0]
+        self.assertIn("🧪 **Specter PR Build**", body)
+        self.assertIn("<summary>Build provenance</summary>", body)
+        self.assertIn("🖥️ [Open browser simulator]", body)
+        self.assertIn("⬇️ [Download firmware from the same commit]", body)
+        self.assertIn("Never use real funds or enter a real seed phrase", body)
+        self.assertIn("Use dedicated test hardware for firmware builds", body)
+        self.assertIn(MARKER, body)
+        self.assertNotIn("### Latest", body)
 
-    def test_post_error_keeps_old_comment(self):
+    def test_no_existing_comment_creates_exactly_one(self):
         req = request()
         self.state_path.write_text(json.dumps(state(req)))
+        self.comments = []
+        self.invoke()
+        self.assertEqual(self.writes(), [("POST", f"/repos/{bot.TARGET}/issues/12/comments")])
 
-        def api_error(method, path, token, data=None):
-            if method == "POST":
-                raise RuntimeError("API outage")
+    def test_extra_owned_marked_duplicate_is_removed_after_patch(self):
+        req = request()
+        self.state_path.write_text(json.dumps(state(req)))
+        self.comments.append({"id": 16, "user": {"login": USER}, "body": MARKER + " newer"})
+        out = self.invoke()
+        self.assertEqual(out["removed_comments"], 1)
+        self.assertEqual(self.writes(), [
+            ("PATCH", f"/repos/{bot.TARGET}/issues/comments/11"),
+            ("DELETE", f"/repos/{bot.TARGET}/issues/comments/16"),
+        ])
+
+    def test_unchanged_comment_causes_no_api_writes(self):
+        req = request()
+        st = state(req)
+        self.state_path.write_text(json.dumps(st))
+        self.comments[0]["body"] = bot.fork_comment_body(st, "build", "success", 12)
+        self.invoke()
+        self.assertEqual(self.writes(), [])
+
+    def test_failed_patch_keeps_old_comment_and_duplicates(self):
+        req = request()
+        self.state_path.write_text(json.dumps(state(req)))
+        self.comments.append({"id": 16, "user": {"login": USER}, "body": MARKER + " newer"})
+        def fail_patch(method, path, token, data=None):
+            if method == "PATCH":
+                raise RuntimeError("simulated API outage")
             return self.mock_api(method, path, token, data)
+        with self.assertRaisesRegex(RuntimeError, "simulated API outage"):
+            self.invoke(request_fn=fail_patch)
+        self.assertFalse(any(method == "DELETE" for method, *_ in self.calls))
 
-        with self.assertRaisesRegex(RuntimeError, "API outage"):
-            self.invoke(request_fn=api_error)
-        self.assertFalse(any(a == "DELETE" for a, _, _, _ in self.calls))
-
-    def test_foreign_authentication_is_rejected_without_writes(self):
+    def test_unconfirmed_patch_never_deletes_duplicates(self):
         req = request()
         self.state_path.write_text(json.dumps(state(req)))
-
-        def wrong_user(method, path, token, data=None):
-            if path == "/user":
-                return {"login": "wrong-account", "type": "User"}
+        self.comments.append({"id": 16, "user": {"login": USER}, "body": MARKER + " newer"})
+        def bad_patch(method, path, token, data=None):
+            if method == "PATCH":
+                self.calls.append((method, path, token, data))
+                return {"id": 66, "user": {"login": USER}}
             return self.mock_api(method, path, token, data)
+        with self.assertRaisesRegex(ValueError, "update was not confirmed"):
+            self.invoke(request_fn=bad_patch)
+        self.assertFalse(any(method == "DELETE" for method, *_ in self.calls))
 
-        with self.assertRaisesRegex(ValueError, "does not belong"):
-            self.invoke(request_fn=wrong_user)
-        self.assertFalse(any(a in ("POST", "DELETE") for a, _, _, _ in self.calls))
-
-    def test_only_fork_target_is_allowed(self):
-        req = request()
-        req["base_repository"] = "cryptoadvance/specter-diy"
-        with self.assertRaisesRegex(ValueError, "only supports"):
-            self.invoke(req)
-        self.assertFalse(self.calls)
-
-    def test_stale_state_rejected_without_writes(self):
-        req = request()
-        old = state(req)
-        old["latest_source_sha"] = "f" * 40
-        self.state_path.write_text(json.dumps(old))
-        self.assertEqual(self.invoke()["status"], "stale-state")
-        self.assertFalse(any(a in ("POST", "DELETE") for a, _, _, _ in self.calls))
-
-    def test_closed_pr_deletes_only_existing_own_marked_comment(self):
-        req = request("delete")
-        self.state_path.write_text(json.dumps(state(req, "deleted")))
-        result = self.invoke(req, "deleted")
-        self.assertEqual(result["removed_comments"], 1)
-        writes = [(a, b) for a, b, _, _ in self.calls if a in ("POST", "DELETE")]
-        self.assertEqual(writes, [("DELETE", f"/repos/{bot.TARGET}/issues/comments/11")])
-
-    def test_unconfirmed_post_response_does_not_delete(self):
+    def test_unconfirmed_first_post_response(self):
         req = request()
         self.state_path.write_text(json.dumps(state(req)))
+        self.comments = []
         def missing_id(method, path, token, data=None):
             if method == "POST":
                 self.calls.append((method, path, token, data))
                 return {"user": {"login": USER}}
             return self.mock_api(method, path, token, data)
-        with self.assertRaisesRegex(ValueError, "not confirmed"):
+        with self.assertRaisesRegex(ValueError, "creation was not confirmed"):
             self.invoke(request_fn=missing_id)
-        self.assertFalse(any(a == "DELETE" for a, _, _, _ in self.calls))
+        self.assertFalse(any(method == "DELETE" for method, *_ in self.calls))
+
+    def test_foreign_authentication_rejected_without_writes(self):
+        req = request()
+        self.state_path.write_text(json.dumps(state(req)))
+        def wrong_user(method, path, token, data=None):
+            if path == "/user":
+                return {"login": "wrong-account", "type": "User"}
+            return self.mock_api(method, path, token, data)
+        with self.assertRaisesRegex(ValueError, "does not belong"):
+            self.invoke(request_fn=wrong_user)
+        self.assertEqual(self.writes(), [])
+
+    def test_only_fork_target_allowed(self):
+        req = request()
+        req["base_repository"] = "cryptoadvance/specter-diy"
+        with self.assertRaisesRegex(ValueError, "only supports"):
+            self.invoke(req)
+        self.assertEqual(self.writes(), [])
+
+    def test_stale_state_rejected_without_writes(self):
+        req = request()
+        st = state(req)
+        st["latest_source_sha"] = "f" * 40
+        self.state_path.write_text(json.dumps(st))
+        self.assertEqual(self.invoke()["status"], "stale-state")
+        self.assertEqual(self.writes(), [])
+
+    def test_closed_pr_deletes_only_own_marked_comment(self):
+        req = request("delete")
+        self.state_path.write_text(json.dumps(state(req, "deleted")))
+        out = self.invoke(req, "deleted")
+        self.assertEqual(out["removed_comments"], 1)
+        self.assertEqual(self.writes(), [
+            ("DELETE", f"/repos/{bot.TARGET}/issues/comments/11")
+        ])
+
+    def test_failed_build_keeps_last_success_and_warning(self):
+        req = request()
+        st = state(req, outcome="failure")
+        body = bot.fork_comment_body(st, "build", "failure", 12)
+        self.assertIn("❌", body)
+        self.assertIn("Latest build failed", body)
+        self.assertIn("Open browser simulator", body)
+        self.assertIn("Never use real funds", body)
+
+    def test_success_without_preview_stays_clear(self):
+        req = request()
+        st = state(req, history=[])
+        body = bot.fork_comment_body(st, "build", "success", 12)
+        self.assertNotIn("Open browser simulator", body)
+        self.assertIn("No successful browser preview", body)
 
 
 if __name__ == "__main__":
