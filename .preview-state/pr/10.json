@@ -1,0 +1,17 @@
+{
+  "base_ref": "master",
+  "base_repository": "schnuartz-ai/specter-diy",
+  "base_sha": "cd73613567d7c2d20becbb4c05c2549a1c270709",
+  "head_ref": "master",
+  "head_repository": "cryptoadvance/specter-diy",
+  "latest_action": "delete",
+  "latest_request_id": "specter-pr-10-bec1ab108d6559a35b9cf8b1ea41da1f5731918a-37758463153-1",
+  "latest_source_sha": "bec1ab108d6559a35b9cf8b1ea41da1f5731918a",
+  "latest_source_updated_at": "2026-10-08T09:42:00.000000Z",
+  "run_attempt": 1,
+  "simulator_repository": "schnuartz-ai/specter-diy-web-simulator",
+  "simulator_sha": "4b1ca43b53eae90411545adf2d813f73b2a585b9",
+  "status": "deleted",
+  "successful_previews": [],
+  "workflow_run_id": 37758481727
+}
