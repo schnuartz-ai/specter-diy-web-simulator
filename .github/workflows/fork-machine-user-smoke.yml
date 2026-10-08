@@ -1,0 +1,87 @@
+name: Fork machine-user permission smoke test (temporary)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/fork-machine-user-smoke.yml
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: github.repository == 'schnuartz-ai/specter-diy-web-simulator'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out trusted script, not PR-supplied code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 pinned
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Read the published, immutable test PR state
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 pinned
+        with:
+          ref: gh-pages
+          path: pages
+          persist-credentials: false
+      - name: Repost own comment, remove previous, verify PR changes are blocked
+        env:
+          SPECTER_PREVIEW_BOT_TOKEN: ${{ secrets.SPECTER_PREVIEW_BOT_TOKEN }}
+          SPECTER_PREVIEW_BOT_LOGIN: ${{ vars.SPECTER_PREVIEW_BOT_LOGIN }}
+        run: |
+          python3 - <<'PY'
+          import sys, json, os
+          from pathlib import Path
+          from urllib.error import HTTPError
+          sys.path.insert(0, 'web/tools')
+          import report_fork_machine_user as b
+          state = json.loads(Path('pages/.preview-state/pr/10.json').read_text())
+          if state["base_repository"] != b.TARGET or state["simulator_repository"] != b.SIMULATOR or state["status"] != "success":
+              raise SystemExit("Refusing unexpected fork preview state")
+          token = os.environ["SPECTER_PREVIEW_BOT_TOKEN"]
+          login = b.verify_machine_user(token, os.environ["SPECTER_PREVIEW_BOT_LOGIN"])
+          before = b.list_comments(b.TARGET, 10, token)
+          own_before = b.managed_comments(before, login)
+          if len(own_before) != 1:
+              raise SystemExit("Expected exactly one existing bot preview comment")
+          old_id = own_before[0]["id"]
+          request = {
+              "request_id": state["latest_request_id"],
+              "action": state["latest_action"],
+              "base_repository": state["base_repository"],
+              "base_sha": state["base_sha"], "base_ref": state["base_ref"],
+              "pr_number": 10,
+              "head_repository": state["head_repository"],
+              "head_sha": state["latest_source_sha"],
+              "head_ref": state["head_ref"],
+              "source_updated_at": state["latest_source_updated_at"],
+          }
+          response = b.report(
+              request, Path('pages'), state["simulator_sha"],
+              state["workflow_run_id"], state["run_attempt"],
+              state["status"], token, login)
+          if not response["applied"] or response["removed_comments"] != 1:
+              raise SystemExit("Failed to replace old comment")
+          after = b.list_comments(b.TARGET, 10, token)
+          own_after = b.managed_comments(after, login)
+          if len(own_after) != 1 or own_after[0]["id"] == old_id:
+              raise SystemExit("Old bot comment was not replaced cleanly")
+          if any(x.get("id") == old_id for x in after):
+              raise SystemExit("Old bot comment survived replacement")
+          # Harmless negative probe: same PR title, no meaningful mutation.
+          pr = b.api("GET", f"/repos/{b.TARGET}/pulls/10", token)
+          try:
+              b.api("PATCH", f"/repos/{b.TARGET}/pulls/10", token, {"title": pr["title"]})
+          except HTTPError as exc:
+              if exc.code not in (403, 404):
+                  raise
+              print("PASS: Machine-user token is denied PR editing (HTTP " + str(exc.code) + ")")
+          else:
+              raise SystemExit("SECURITY FAIL: Machine-user token could edit a PR title!")
+          print("PASS: Real bot replacement created a new own comment and deleted its old one.")
+          print("PASS: Preview, firmware, logs, warning:", all(word in own_after[0]["body"] for word in [
+              "Open browser simulator", "Firmware artifact", "Build logs", "Never enter a real seed phrase"]))
+          print("NEW_COMMENT_ID=" + str(own_after[0]["id"]))
+          PY
