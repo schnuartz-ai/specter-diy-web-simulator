@@ -34,8 +34,16 @@ SIMULATOR_COMMIT="${SIMULATOR_COMMIT:-$(git -C "$SIMULATOR_ROOT" rev-parse HEAD 
   echo 'Set SIMULATOR_REPOSITORY=owner/repo and SIMULATOR_COMMIT=<full-sha>.' >&2
   exit 1
 }
-[[ "$SOURCE_REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { echo 'Invalid source repository' >&2; exit 1; }
-[[ "$SIMULATOR_REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { echo 'Invalid simulator repository' >&2; exit 1; }
+[[ "$SOURCE_REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || {
+  echo "Invalid source repository '$SOURCE_REPOSITORY' (expected owner/repo)." >&2
+  echo "Set SPECTER_SOURCE_REPOSITORY=owner/repo if the firmware clone has no GitHub origin." >&2
+  exit 1
+}
+[[ "$SIMULATOR_REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || {
+  echo "Invalid simulator repository '$SIMULATOR_REPOSITORY' (expected owner/repo)." >&2
+  echo "Set SIMULATOR_REPOSITORY=owner/repo if this clone has no GitHub origin." >&2
+  exit 1
+}
 [[ "$SIMULATOR_COMMIT" =~ ^[a-f0-9]{40}$ ]] || { echo 'Invalid simulator commit' >&2; exit 1; }
 OUT="$ROOT/builds/$SOURCE_REPOSITORY/$SOURCE_SHA"
 

@@ -19,17 +19,41 @@ You do not need this to try the simulator: the official build is hosted at
 <https://cryptoadvance.github.io/specter-diy/>. Build locally to test your own
 Specter DIY changes or simulator tooling.
 
-**Requirements**
+You need Linux or Windows with WSL2 (CI runs Ubuntu; other systems are
+untested). Install the prerequisites once:
 
-- Linux or Windows with WSL2 (CI runs Ubuntu; other systems are untested)
-- `git`, `python3` (CI uses 3.11)
-- Native build tools, as installed by CI:
-  `sudo apt-get install build-essential pkg-config libffi-dev libreadline-dev`
-- [Emscripten](https://emscripten.org/) **exactly 3.1.74**, installed below
-- Node.js 22 and npm, only if you want to run the browser tests
-- The first build compiles MicroPython, LVGL and secp256k1 and takes a while
+```sh
+sudo apt-get update && sudo apt-get install --yes git python3 build-essential pkg-config libffi-dev libreadline-dev
+```
 
-**Steps** (both repositories are cloned side by side):
+Then build and start the simulator:
+
+```sh
+git clone https://github.com/cryptoadvance/specter-diy-web-simulator.git
+cd specter-diy-web-simulator && ./run-local.sh
+```
+
+When the script prints `Serving on http://localhost:8765/`, open that address in
+a browser (Chromium is the engine covered by CI). Stop it with `Ctrl+C`; run
+`./run-local.sh` again to restart. On WSL2 the Windows browser can normally reach
+the same `localhost` address.
+
+`run-local.sh` downloads over 300 MB (the pinned Emscripten 3.1.74 plus the
+firmware with its submodules), all into `.browser-work/` (ignored by Git), builds
+the WebAssembly runtime, verifies it, and serves `web/`. Later runs reuse the
+downloads and only rebuild. Options are environment variables:
+
+| Variable | Effect |
+| --- | --- |
+| `PORT=9000` | serve on another port |
+| `BUILD_ONLY=1` | build and verify, do not start the server |
+| `SPECTER_REF=<tag, branch or sha>` | simulate that firmware revision instead of the default branch |
+
+Do not open `web/index.html` directly from disk: the page fetches the build
+files over HTTP.
+
+<details>
+<summary>Manual steps without the script</summary>
 
 ```sh
 # 1. Get the firmware (with submodules) and this repository
@@ -52,16 +76,12 @@ python3 web/browser/verify_build.py
 python3 -m http.server 8765 --directory web
 ```
 
-Open <http://localhost:8765/> in a browser. Chromium is the engine covered by
-CI. Serve the page over HTTP as shown: it fetches the build files, so opening
-`web/index.html` directly from disk is not supported. Stop the server with
-`Ctrl+C`. On WSL2 the Windows browser can normally reach the same `localhost`
-address.
+</details>
 
 The build records which firmware commit and which simulator commit produced it
 in `web/builds/<owner>/<repo>/<firmware-sha>/build-info.json`. The simulator
 repository and commit are read from this checkout; the firmware repository and
-commit come from `SPECTER_SRC`. See
+commit come from `SPECTER_SRC` (`.browser-work/specter-diy` when using `run-local.sh`). See
 [Build locally](docs/browser-simulator.md#build-locally) for the environment
 variables that override this and for running the automated browser tests.
 
@@ -69,8 +89,8 @@ variables that override this and for running the automated browser tests.
 sources and makefiles under `f469-disco/` (display, SDL, crypto and MicroPython
 unix-port files), updates submodules, and writes `browser.manifest.py` inside
 `SPECTER_SRC`. Use a dedicated clone of `specter-diy`, not a working copy with
-uncommitted changes. To get a pristine tree again, delete that clone and clone
-it anew.
+uncommitted changes. `run-local.sh` uses its own clone in `.browser-work/`;
+delete that folder to start from scratch.
 
 **Troubleshooting:** see [Troubleshooting](docs/browser-simulator.md#troubleshooting).
 

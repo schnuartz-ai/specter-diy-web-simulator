@@ -91,6 +91,10 @@ uncommitted changes, the recorded commit does not describe them.
 | Missing files or errors under `f469-disco/micropython` or `usermods` | The firmware was cloned without submodules. Run `git -C /path/to/specter-diy submodule update --init --recursive` (the build script also runs this). |
 | Compilation errors after switching firmware commits | Patches from a previous build may remain in the checkout. Use a fresh clone of `specter-diy`. |
 | The page shows no simulator or a failed load | Build first, then serve over HTTP (`python3 -m http.server 8765 --directory web`). The page needs `web/browser/current.json` and the files in `web/builds/`. |
+| `Missing: ...` from `run-local.sh` | Install the packages it lists with the `apt-get` command it prints. |
+| `... is not a git clone` | The simulator was downloaded as a ZIP. Use `git clone` instead. |
+| `Cannot tell the GitHub owner/repo of this clone` | The clone's `origin` is not on GitHub (a mirror or local path). Run `SIMULATOR_REPOSITORY=owner/repo ./run-local.sh`. |
+| Strange build errors after an interrupted run | Delete `.browser-work/` and run `./run-local.sh` again. |
 | `Address already in use` | Another process uses port 8765. Pick another port in the `http.server` command and URL. |
 
 The build script applies only browser compatibility changes to the checked-out
