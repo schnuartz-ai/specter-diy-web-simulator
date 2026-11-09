@@ -43,7 +43,10 @@ Specter-DIY checkout:
    dependencies required by the Specter-DIY source checkout.
 2. Run `SPECTER_SRC=/path/to/specter-diy bash web/browser/build-browser.sh`
    from this repository's root. The source checkout must be at the exact
-   commit you intend to simulate.
+   commit you intend to simulate. The script patches files in that checkout
+   (see below), so use a dedicated clone. A step-by-step version of this
+   procedure, including the Emscripten installation, is in the
+   [README](../README.md#run-it-locally).
 3. Run `python3 web/browser/verify_build.py` and
    `python3 web/tests/test-source-project.py`.
 4. Run `npm ci --prefix web`, `npx --prefix web playwright install chromium`,
@@ -59,9 +62,36 @@ Specter-DIY code being simulated, while `simulator.repository`/
 `simulator.commit` identify the simulator tooling that built it. It also
 records the Emscripten version, build time, and SHA256 of each artifact.
 `web/browser/current.json` remains only a pointer to the build. Both generated
-directories are ignored by Git. `SPECTER_SOURCE_REPOSITORY=owner/repo`,
-`SIMULATOR_REPOSITORY=owner/repo`, and `SIMULATOR_COMMIT=<full-sha>` can be
-used when building source and tooling from different repositories.
+directories are ignored by Git.
+
+Provenance defaults when the environment variables are not set:
+
+| Value | Default |
+| --- | --- |
+| Source repository | `SPECTER_SOURCE_REPOSITORY`, else `GITHUB_REPOSITORY`, else the `origin` remote of `SPECTER_SRC` |
+| Source commit | `HEAD` of `SPECTER_SRC` |
+| Simulator repository | `SIMULATOR_REPOSITORY`, else the `origin` remote of this repository's checkout |
+| Simulator commit | `SIMULATOR_COMMIT`, else `HEAD` of this repository's checkout |
+
+Set `SPECTER_SOURCE_REPOSITORY=owner/repo`, `SIMULATOR_REPOSITORY=owner/repo`,
+and `SIMULATOR_COMMIT=<full-sha>` when the checkouts have no GitHub `origin`
+remote, or when building source and tooling from different repositories. The
+simulator values are never taken from the firmware checkout. If the checkout has
+uncommitted changes, the recorded commit does not describe them.
+
+### Troubleshooting
+
+| Message or symptom | Cause and fix |
+| --- | --- |
+| `Emscripten 3.1.74 is required` | `emcc` is not on `PATH`. Run `source /path/to/emsdk/emsdk_env.sh` in the same shell, or set `EMSDK_ENV` to that file. |
+| `Expected Emscripten 3.1.74` | Another version is active. Run `emsdk install 3.1.74 && emsdk activate 3.1.74`, then source `emsdk_env.sh` again. |
+| `SPECTER_SRC=... is not a Specter-DIY checkout` | `SPECTER_SRC` must point to a clone of `cryptoadvance/specter-diy`. Without it the script looks at this repository. |
+| `Invalid source repository` | The firmware checkout has no GitHub `origin` remote. Set `SPECTER_SOURCE_REPOSITORY=owner/repo`. |
+| `Cannot determine simulator repository/commit` | This checkout is not a git clone with an `origin` remote. Set `SIMULATOR_REPOSITORY` and `SIMULATOR_COMMIT`. |
+| Missing files or errors under `f469-disco/micropython` or `usermods` | The firmware was cloned without submodules. Run `git -C /path/to/specter-diy submodule update --init --recursive` (the build script also runs this). |
+| Compilation errors after switching firmware commits | Patches from a previous build may remain in the checkout. Use a fresh clone of `specter-diy`. |
+| The page shows no simulator or a failed load | Build first, then serve over HTTP (`python3 -m http.server 8765 --directory web`). The page needs `web/browser/current.json` and the files in `web/builds/`. |
+| `Address already in use` | Another process uses port 8765. Pick another port in the `http.server` command and URL. |
 
 The build script applies only browser compatibility changes to the checked-out
 MicroPython/LVGL C submodules. It freezes the wallet's `src/` tree without
