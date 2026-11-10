@@ -19,16 +19,8 @@ You do not need this to try the simulator: the official build is hosted at
 <https://cryptoadvance.github.io/specter-diy/>. Build locally to test your own
 Specter DIY changes or simulator tooling.
 
-You need Linux or Windows with WSL2. CI runs Ubuntu, and the script was tested
-on Ubuntu 24.04 under WSL2; other systems, including macOS, are untested and the
-script stops with a message on anything but Linux.
-
-**Windows only:** run every command below inside Ubuntu, not in PowerShell or
-the Command Prompt. Open the "Ubuntu" app from the Start menu, or run `wsl`
-(or `wsl -d Ubuntu`), then `cd ~` to work in your Linux home folder. The prompt
-should look like `user@host:~$`. Do not clone into `/mnt/c/...` (your Windows
-drives): the build is slow there and can fail on file permissions. Windows' own
-`sudo` is not the Linux one and will not work here.
+You need Linux (CI runs Ubuntu; the script was tested on Ubuntu 24.04). Other
+systems are untested, and the script stops with a message on anything but Linux.
 
 Install the prerequisites once (Debian/Ubuntu commands; skip this if `git`,
 `python3` and the build tools are already installed; it asks for your Linux
@@ -47,8 +39,7 @@ cd specter-diy-web-simulator && ./run-local.sh
 
 When the script prints `Serving on http://localhost:8765/`, open that address in
 a browser (Chromium is the engine covered by CI). Stop it with `Ctrl+C`; run
-`./run-local.sh` again to restart. On WSL2 the Windows browser can normally reach
-the same `localhost` address.
+`./run-local.sh` again to restart.
 
 `run-local.sh` downloads over 300 MB (the pinned Emscripten 3.1.74 plus the
 firmware with its submodules), all into `.browser-work/` (ignored by Git), builds

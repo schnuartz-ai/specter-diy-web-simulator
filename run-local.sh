@@ -9,7 +9,7 @@
 # Everything it downloads goes into ./.browser-work (ignored by git): a
 # recursive clone of cryptoadvance/specter-diy and Emscripten 3.1.74. The
 # firmware clone there is patched by the build; delete .browser-work to reset.
-# Needs Linux or WSL2 with git, python3 and the native build tools below.
+# Needs Linux with git, python3 and the native build tools below.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -26,7 +26,7 @@ die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 step "Checking prerequisites"
 case "$(uname -s)" in
   Linux) ;;
-  *) die "Linux or WSL2 is required (found $(uname -s)). On Windows run this inside WSL2." ;;
+  *) die "Linux is required (found $(uname -s))." ;;
 esac
 missing=()
 for tool in git python3 gcc make pkg-config; do
