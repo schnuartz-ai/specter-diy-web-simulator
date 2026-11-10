@@ -19,12 +19,15 @@ You do not need this to try the simulator: the official build is hosted at
 <https://cryptoadvance.github.io/specter-diy/>. Build locally to test your own
 Specter DIY changes or simulator tooling.
 
-You need Linux (CI runs Ubuntu; the script was tested on Ubuntu 24.04). Other
-systems are untested, and the script stops with a message on anything but Linux.
+Pick one of two ways. **On Linux** use the script below. **On Windows or
+macOS** use [Docker](#windows-and-macos-docker).
 
-Install the prerequisites once (Debian/Ubuntu commands; skip this if `git`,
-`python3` and the build tools are already installed; it asks for your Linux
-password; on other distributions install the equivalent packages):
+### Linux
+
+The script was tested on Ubuntu 24.04 (CI also runs Ubuntu). Install the
+prerequisites once (Debian/Ubuntu commands; skip this if `git`, `python3` and the
+build tools are already installed; it asks for your Linux password; on other
+distributions install the equivalent packages):
 
 ```sh
 sudo apt-get update && sudo apt-get install --yes git python3 build-essential pkg-config libffi-dev libreadline-dev
@@ -38,8 +41,9 @@ cd specter-diy-web-simulator && ./run-local.sh
 ```
 
 When the script prints `Serving on http://localhost:8765/`, open that address in
-a browser (Chromium is the engine covered by CI). Stop it with `Ctrl+C`; run
-`./run-local.sh` again to restart.
+a browser (Chromium is the engine covered by CI). The server only listens on your
+own computer (`127.0.0.1`). Stop it with `Ctrl+C`; run `./run-local.sh` again to
+restart.
 
 `run-local.sh` downloads over 300 MB (the pinned Emscripten 3.1.74 plus the
 firmware with its submodules), all into `.browser-work/` (ignored by Git), builds
@@ -50,10 +54,35 @@ downloads and only rebuild. Options are environment variables:
 | --- | --- |
 | `PORT=9000` | serve on another port |
 | `BUILD_ONLY=1` | build and verify, do not start the server |
+| `SERVE_ONLY=1` | serve the existing build without rebuilding |
+| `BIND=0.0.0.0` | listen on all network interfaces instead of only `127.0.0.1` |
 | `SPECTER_REF=<tag, branch or sha>` | simulate that firmware revision instead of the default branch |
 
 Do not open `web/index.html` directly from disk: the page fetches the build
 files over HTTP.
+
+### Windows and macOS (Docker)
+
+Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and
+start it. Then, in any terminal (PowerShell, Command Prompt or a macOS terminal):
+
+```sh
+git clone https://github.com/cryptoadvance/specter-diy-web-simulator.git
+cd specter-diy-web-simulator
+docker build -t specter-sim .
+docker run --rm -p 127.0.0.1:8765:8765 specter-sim
+```
+
+Open <http://localhost:8765/>. Stop it with `Ctrl+C`. `docker build` does the
+work of `run-local.sh` inside an Ubuntu container: it downloads and compiles
+everything (about 10 minutes the first time, and several GB of Docker build
+cache) and keeps only the static site, so the final image is about 200 MB.
+`docker run` only serves it and starts immediately. If port 8765 is taken, use
+another host port, for example `-p 127.0.0.1:9000:8765`, and open that one.
+Build from a `git clone`, not a ZIP download, because the image takes the
+simulator commit from `.git`. To simulate another firmware revision, add
+`--build-arg SPECTER_REF=<tag, branch or sha>` to `docker build`. Tested on
+Windows 11 with Docker Desktop; macOS is untested.
 
 <details>
 <summary>Manual steps without the script</summary>

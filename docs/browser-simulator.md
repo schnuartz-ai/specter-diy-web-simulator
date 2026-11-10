@@ -96,6 +96,8 @@ uncommitted changes, the recorded commit does not describe them.
 | `Cannot tell the GitHub owner/repo of this clone` | The clone's `origin` is not on GitHub (a mirror or local path). Run `SIMULATOR_REPOSITORY=owner/repo ./run-local.sh`. |
 | `destination path 'specter-diy-web-simulator' already exists` | An earlier clone is in the current folder. Remove it (`rm -rf specter-diy-web-simulator`) or `cd` into it and run `./run-local.sh`. |
 | Strange build errors after an interrupted run | Delete `.browser-work/` and run `./run-local.sh` again. |
+| `ports are not available` / `bind: Only one usage of each socket address` (Docker) | Port 8765 is in use. Map another host port: `docker run --rm -p 127.0.0.1:9000:8765 specter-sim`, then open `http://localhost:9000/`. |
+| `docker build` fails with `` or "No such file or directory" for a script | Line endings were converted on checkout. The repository's `.gitattributes` prevents this for fresh clones; re-clone or run `git add --renormalize .`. |
 | `Address already in use` | Another process uses port 8765. Pick another port in the `http.server` command and URL. |
 
 The build script applies only browser compatibility changes to the checked-out

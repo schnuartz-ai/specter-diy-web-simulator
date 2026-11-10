@@ -1,0 +1,6 @@
+.browser-work
+web/builds
+web/browser/current.json
+web/node_modules
+web/test-results
+**/__pycache__

@@ -5,6 +5,8 @@
 #   PORT=9000 ./run-local.sh       serve on another port
 #   BUILD_ONLY=1 ./run-local.sh    build and verify, do not start the server
 #   SPECTER_REF=<tag|branch|sha> ./run-local.sh   simulate another firmware revision
+#   SERVE_ONLY=1 ./run-local.sh    serve an existing build without rebuilding
+#   BIND=0.0.0.0 ./run-local.sh    listen on all interfaces (default: 127.0.0.1 only)
 #
 # Everything it downloads goes into ./.browser-work (ignored by git): a
 # recursive clone of cryptoadvance/specter-diy and Emscripten 3.1.74. The
@@ -17,11 +19,22 @@ WORK="$HERE/.browser-work"
 FIRMWARE="$WORK/specter-diy"
 EMSDK_DIR="$WORK/emsdk"
 PORT="${PORT:-8765}"
+BIND="${BIND:-127.0.0.1}"
 EMSCRIPTEN_VERSION=3.1.74
 APT_PACKAGES="git python3 build-essential pkg-config libffi-dev libreadline-dev"
 
 step() { printf '\n==> %s\n' "$*"; }
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
+
+serve() {
+  step "Serving on http://localhost:$PORT/  (Ctrl+C to stop)"
+  exec python3 -m http.server "$PORT" --bind "$BIND" --directory "$HERE/web"
+}
+
+if [[ "${SERVE_ONLY:-0}" = 1 ]]; then
+  [[ -f "$HERE/web/browser/current.json" ]] || die "No build found. Run ./run-local.sh without SERVE_ONLY first."
+  serve
+fi
 
 step "Checking prerequisites"
 case "$(uname -s)" in
@@ -85,5 +98,4 @@ python3 "$HERE/web/browser/verify_build.py"
 
 [[ "${BUILD_ONLY:-0}" = 1 ]] && { echo "Build finished."; exit 0; }
 
-step "Serving on http://localhost:$PORT/  (Ctrl+C to stop)"
-exec python3 -m http.server "$PORT" --directory "$HERE/web"
+serve
