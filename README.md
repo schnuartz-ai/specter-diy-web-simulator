@@ -19,8 +19,20 @@ You do not need this to try the simulator: the official build is hosted at
 <https://cryptoadvance.github.io/specter-diy/>. Build locally to test your own
 Specter DIY changes or simulator tooling.
 
-You need Linux or Windows with WSL2 (CI runs Ubuntu; other systems are
-untested). Install the prerequisites once:
+You need Linux or Windows with WSL2. CI runs Ubuntu, and the script was tested
+on Ubuntu 24.04 under WSL2; other systems, including macOS, are untested and the
+script stops with a message on anything but Linux.
+
+**Windows only:** run every command below inside Ubuntu, not in PowerShell or
+the Command Prompt. Open the "Ubuntu" app from the Start menu, or run `wsl`
+(or `wsl -d Ubuntu`), then `cd ~` to work in your Linux home folder. The prompt
+should look like `user@host:~$`. Do not clone into `/mnt/c/...` (your Windows
+drives): the build is slow there and can fail on file permissions. Windows' own
+`sudo` is not the Linux one and will not work here.
+
+Install the prerequisites once (Debian/Ubuntu commands; skip this if `git`,
+`python3` and the build tools are already installed; it asks for your Linux
+password; on other distributions install the equivalent packages):
 
 ```sh
 sudo apt-get update && sudo apt-get install --yes git python3 build-essential pkg-config libffi-dev libreadline-dev

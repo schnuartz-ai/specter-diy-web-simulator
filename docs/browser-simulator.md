@@ -94,6 +94,9 @@ uncommitted changes, the recorded commit does not describe them.
 | `Missing: ...` from `run-local.sh` | Install the packages it lists with the `apt-get` command it prints. |
 | `... is not a git clone` | The simulator was downloaded as a ZIP. Use `git clone` instead. |
 | `Cannot tell the GitHub owner/repo of this clone` | The clone's `origin` is not on GitHub (a mirror or local path). Run `SIMULATOR_REPOSITORY=owner/repo ./run-local.sh`. |
+| Windows says `sudo` is disabled | The commands were typed in PowerShell or the Command Prompt. On Windows, start Ubuntu first (`wsl -d Ubuntu`), then run them there. |
+| `destination path 'specter-diy-web-simulator' already exists` | An earlier clone is in the current folder. Remove it (`rm -rf specter-diy-web-simulator`) or `cd` into it and run `./run-local.sh`. |
+| Very slow build or permission errors under `/mnt/c/...` | The clone is on a Windows drive. Clone into your Linux home (`cd ~`) instead. |
 | Strange build errors after an interrupted run | Delete `.browser-work/` and run `./run-local.sh` again. |
 | `Address already in use` | Another process uses port 8765. Pick another port in the `http.server` command and URL. |
 
