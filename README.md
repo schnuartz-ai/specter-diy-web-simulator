@@ -54,6 +54,7 @@ downloads and only rebuild. Options are environment variables:
 | --- | --- |
 | `PORT=9000` | serve on another port |
 | `BUILD_ONLY=1` | build and verify, do not start the server |
+| `FIRMWARE_ONLY=1` | fetch or select the firmware revision (with `SPECTER_REF`), then stop |
 | `SERVE_ONLY=1` | serve the existing build without rebuilding |
 | `BIND=0.0.0.0` | listen on all network interfaces instead of only `127.0.0.1` |
 | `SPECTER_REF=<tag, branch or sha>` | simulate that firmware revision instead of the default branch |

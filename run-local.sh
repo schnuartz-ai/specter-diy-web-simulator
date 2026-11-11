@@ -5,6 +5,7 @@
 #   PORT=9000 ./run-local.sh       serve on another port
 #   BUILD_ONLY=1 ./run-local.sh    build and verify, do not start the server
 #   SPECTER_REF=<tag|branch|sha> ./run-local.sh   simulate another firmware revision
+#   FIRMWARE_ONLY=1 ./run-local.sh fetch/select the firmware revision, then stop
 #   SERVE_ONLY=1 ./run-local.sh    serve an existing build without rebuilding
 #   BIND=0.0.0.0 ./run-local.sh    listen on all interfaces (default: 127.0.0.1 only)
 #
@@ -87,6 +88,8 @@ if [[ -n "${SPECTER_REF:-}" ]]; then
   # refuses to switch a submodule commit over locally modified files without it.
   git -C "$FIRMWARE" submodule update --init --recursive --force
 fi
+
+[[ "${FIRMWARE_ONLY:-0}" = 1 ]] && { echo "Firmware ready in $FIRMWARE."; exit 0; }
 
 step "Emscripten $EMSCRIPTEN_VERSION"
 if [[ ! -f "$EMSDK_DIR/emsdk_env.sh" ]]; then
