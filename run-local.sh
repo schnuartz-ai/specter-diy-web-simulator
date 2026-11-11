@@ -67,6 +67,11 @@ if [[ -z "${SIMULATOR_REPOSITORY:-}" ]]; then
   fi
 fi
 
+if [[ -n "$(git -C "$HERE" status --porcelain --untracked-files=no 2>/dev/null)" ]]; then
+  echo "WARNING: this checkout has uncommitted changes. The build records only the commit" >&2
+  echo "         ($(git -C "$HERE" rev-parse --short HEAD)), which does not describe them." >&2
+fi
+
 mkdir -p "$WORK"
 
 step "Firmware source (cryptoadvance/specter-diy)"
@@ -78,7 +83,9 @@ fi
 if [[ -n "${SPECTER_REF:-}" ]]; then
   git -C "$FIRMWARE" fetch --tags origin
   git -C "$FIRMWARE" checkout --force "$SPECTER_REF"
-  git -C "$FIRMWARE" submodule update --init --recursive
+  # --force: an earlier build patched files inside the submodules, and git
+  # refuses to switch a submodule commit over locally modified files without it.
+  git -C "$FIRMWARE" submodule update --init --recursive --force
 fi
 
 step "Emscripten $EMSCRIPTEN_VERSION"

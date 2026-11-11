@@ -77,7 +77,8 @@ Set `SPECTER_SOURCE_REPOSITORY=owner/repo`, `SIMULATOR_REPOSITORY=owner/repo`,
 and `SIMULATOR_COMMIT=<full-sha>` when the checkouts have no GitHub `origin`
 remote, or when building source and tooling from different repositories. The
 simulator values are never taken from the firmware checkout. If the checkout has
-uncommitted changes, the recorded commit does not describe them.
+uncommitted changes, the recorded commit does not describe them; `run-local.sh`
+prints a warning in that case, the manifest does not record it.
 
 ### Troubleshooting
 

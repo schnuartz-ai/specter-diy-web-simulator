@@ -6,7 +6,8 @@
 # then open http://localhost:8765/. The first stage only wraps run-local.sh, so
 # the build logic stays in web/browser/build-browser.sh. It downloads the
 # firmware and Emscripten and takes several minutes. The second stage keeps just
-# the static site and a Python web server, so the final image is small and
+# the tracked site files plus the generated build and a Python web server (no
+# .git, no tests or tools, no untracked files), so the final image is small and
 # `docker run` starts immediately. The build stage itself needs several GB of
 # disk in Docker's build cache (`docker builder prune` frees it afterwards).
 #
@@ -29,7 +30,11 @@ USER sim
 WORKDIR /home/sim/specter-diy-web-simulator
 COPY --chown=sim:sim . .
 ARG SPECTER_REF=
-RUN SPECTER_REF="$SPECTER_REF" BUILD_ONLY=1 ./run-local.sh
+RUN SPECTER_REF="$SPECTER_REF" BUILD_ONLY=1 ./run-local.sh \
+ && mkdir /tmp/site \
+ && git ls-files -z -- web/index.html web/assets 'web/browser/*.js' \
+      | xargs -0 cp --parents -t /tmp/site \
+ && cp --parents -r web/builds web/browser/current.json /tmp/site
 
 FROM ${BASE}
 RUN apt-get update \
@@ -37,6 +42,6 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 USER ubuntu
 WORKDIR /site
-COPY --from=build /home/sim/specter-diy-web-simulator/web ./web
+COPY --from=build /tmp/site/web ./web
 EXPOSE 8765
 CMD ["python3", "-m", "http.server", "8765", "--bind", "0.0.0.0", "--directory", "web"]
