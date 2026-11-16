@@ -727,13 +727,6 @@ def main() -> None:
         "head_ref": os.environ.get("HEAD_REF", ""),
         "source_updated_at": canonical_time(parse_time(os.environ["SOURCE_UPDATED_AT"])),
     }
-    # Reuse the same live PR validation immediately before the Pages push.
-    if sys.argv[1:] == ["--recheck"]:
-        allowed = _validate_live_pr(request, os.environ["GH_TOKEN"], fetch_pull)
-        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as stream:
-            stream.write(f"allowed={str(allowed).lower()}\n")
-        return
-
     result = publish(
         request=request,
         pages=Path(os.environ["PAGES_DIR"]),
