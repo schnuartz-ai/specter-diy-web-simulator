@@ -531,8 +531,12 @@ jobs:
           PAGES_DIR: ${{ github.workspace }}/pages
           PR_NUMBER: ${{ needs.validate.outputs.pr_number }}
         run: python3 simulator/web/tools/prune_pages.py
+      - name: Revalidate live PR immediately before publishing Pages
+        id: recheck
+        if: steps.publish.outcome == 'success' && steps.publish.outputs.applied == 'true'
+        run: python3 simulator/web/tools/check_preview_publication.py
       - name: Commit and update GitHub Pages source tree
-        if: steps.publish.outcome == 'success'
+        if: steps.recheck.outputs.allowed == 'true'
         run: |
           git -C pages add -A
           if ! git -C pages diff --cached --quiet; then
@@ -540,15 +544,15 @@ jobs:
             git -C pages push origin gh-pages
           fi
       - name: Stage the complete public Pages tree without private state
-        if: steps.publish.outcome == 'success'
+        if: steps.recheck.outputs.allowed == 'true'
         run: python3 simulator/web/tools/stage_pages_site.py pages pages-site
       - name: Upload static Pages artifact
-        if: steps.publish.outcome == 'success'
+        if: steps.recheck.outputs.allowed == 'true'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
           path: pages-site
       - name: Deploy Web Simulator Pages
-        if: steps.publish.outcome == 'success'
+        if: steps.recheck.outputs.allowed == 'true'
         id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
       - name: Update the single machine-user preview comment
