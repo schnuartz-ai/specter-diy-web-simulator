@@ -534,7 +534,7 @@ jobs:
       - name: Revalidate live PR immediately before publishing Pages
         id: recheck
         if: steps.publish.outcome == 'success' && steps.publish.outputs.applied == 'true'
-        run: python3 simulator/web/tools/check_preview_publication.py
+        run: python3 simulator/web/tools/publish_preview.py --recheck
       - name: Commit and update GitHub Pages source tree
         if: steps.recheck.outputs.allowed == 'true'
         run: |
