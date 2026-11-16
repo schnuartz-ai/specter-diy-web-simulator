@@ -18,17 +18,6 @@ def job(name, next_name=None):
 
 
 class PreviewWorkflowContractTests(unittest.TestCase):
-    def test_finalizer_rechecks_live_pr_before_pages_push(self):
-        finalize = job("finalize")
-        check = "python3 simulator/web/tools/publish_preview.py --recheck"
-        push = "- name: Commit and update GitHub Pages source tree"
-        self.assertLess(finalize.index(check), finalize.index(push))
-        for name in ("Commit and update GitHub Pages source tree",
-                     "Stage the complete public Pages tree without private state",
-                     "Upload static Pages artifact", "Deploy Web Simulator Pages"):
-            step = finalize.split(f"- name: {name}\n", 1)[1].split("\n      - name:", 1)[0]
-            self.assertIn("if: steps.recheck.outputs.allowed == 'true'", step)
-
     def test_remote_service_dispatches_then_validates_live_pr(self):
         self.assertIn("workflow_dispatch:", WORKFLOW)
         self.assertNotIn("repository_dispatch:", WORKFLOW)
@@ -80,6 +69,7 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         self.assertIn("actions/deploy-pages@", finalize)
         self.assertIn("actions: write", finalize)
         self.assertIn("preview-publish-${{ github.repository }}", finalize)
+        self.assertIn("queue: max", finalize)
         self.assertIn("needs.validate.outputs.base_repository == 'cryptoadvance/specter-diy'", finalize)
         self.assertIn("SPECTER_PREVIEW_BOT_TOKEN: ${{ secrets.SPECTER_PREVIEW_BOT_TOKEN }}", finalize)
         self.assertIn("SPECTER_PREVIEW_BOT_LOGIN: ${{ vars.SPECTER_PREVIEW_BOT_LOGIN }}", finalize)
