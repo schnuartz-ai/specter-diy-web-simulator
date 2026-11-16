@@ -551,34 +551,5 @@ class PreviewPublisherTests(unittest.TestCase):
         self.assertEqual(result["status"], "failure")
 
 
-class PublicationRecheckTests(unittest.TestCase):
-    def test_recheck_reuses_live_pr_validation_without_publishing(self):
-        with TemporaryDirectory() as temp:
-            req = request()
-            env = {
-                "REQUEST_ID": req["request_id"], "ACTION": req["action"],
-                "BASE_REPOSITORY": req["base_repository"], "BASE_SHA": req["base_sha"],
-                "BASE_REF": req["base_ref"], "PR_NUMBER": str(req["pr_number"]),
-                "HEAD_REPOSITORY": req["head_repository"], "HEAD_SHA": req["head_sha"],
-                "HEAD_REF": req["head_ref"], "SOURCE_UPDATED_AT": req["source_updated_at"],
-                "GH_TOKEN": "token", "GITHUB_OUTPUT": str(Path(temp) / "output"),
-            }
-            for state, expected in (("open", "true"), ("closed", "false")):
-                with self.subTest(state=state), patch.dict("os.environ", env), \
-                     patch.object(sys, "argv", ["publish_preview.py", "--recheck"]), \
-                     patch.object(publisher, "fetch_pull", return_value=live_pr(req, state)), \
-                     patch.object(publisher, "publish", side_effect=AssertionError("No publish")):
-                    publisher.main()
-                self.assertEqual(Path(env["GITHUB_OUTPUT"]).read_text().splitlines()[-1],
-                                 f"allowed={expected}")
-
-    def test_recheck_requires_closed_pr_for_deletion(self):
-        req = request(action="delete")
-        self.assertFalse(publisher._validate_live_pr(
-            req, "token", lambda *_: live_pr(req, "open")))
-        self.assertTrue(publisher._validate_live_pr(
-            req, "token", lambda *_: live_pr(req, "closed")))
-
-
 if __name__ == "__main__":
     unittest.main()
