@@ -69,6 +69,7 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         self.assertIn("actions/deploy-pages@", finalize)
         self.assertIn("actions: write", finalize)
         self.assertIn("preview-publish-${{ github.repository }}", finalize)
+        self.assertIn("queue: max", finalize)
         self.assertIn("actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1", finalize)
         self.assertIn("permission-pull-requests: write", finalize)
         self.assertIn("repositories: specter-diy", finalize)
