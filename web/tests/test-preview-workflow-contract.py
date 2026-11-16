@@ -26,7 +26,7 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         for name in ("Commit and update GitHub Pages source tree",
                      "Stage the complete public Pages tree without private state",
                      "Upload static Pages artifact", "Deploy Web Simulator Pages"):
-            step = finalize.split(f"- name: {name}\\n", 1)[1].split("\\n      - name:", 1)[0]
+            step = finalize.split(f"- name: {name}\n", 1)[1].split("\n      - name:", 1)[0]
             self.assertIn("if: steps.recheck.outputs.allowed == 'true'", step)
 
     def test_remote_service_dispatches_then_validates_live_pr(self):
