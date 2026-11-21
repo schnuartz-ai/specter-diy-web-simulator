@@ -47,8 +47,10 @@ def comment_body(sha, urls):
         f"{links}\n\n"
         "After approval, the same commit is used to build **Specter firmware and its browser simulator**. "
         "Both results will be linked here.\n\n"
-        "A maintainer can also enter `/build` as a PR comment to request the combined "
-        "build manually without waiting for the native CI approval.\n\n"
+        "A maintainer can comment `/build` to build this commit once, or "
+        "`/build-auto` to build now and automatically rebuild future commits while "
+        "the PR stays open. Closing and reopening the PR requires a fresh "
+        "`/build-auto` approval. Native CI approval remains separate.\n\n"
         "**Experimental build:** Never use real funds or seed phrases in a PR preview.\n\n"
         f"{MARKER}\n<!-- specter-approval-sha:" + sha + " -->"
     )
