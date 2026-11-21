@@ -40,13 +40,13 @@ def action_required_ci_runs(number, sha, token, request_fn=api):
 def comment_body(sha, urls):
     links = "\n".join(f"- [Approve and run CI workflow]({url})" for url in urls)
     return (
-        f"**Specter PR Build** · \`{sha[:7]}\` — **Maintainer approval required**\n\n"
+        f"**Specter PR Build** · `{sha[:7]}` — **Maintainer approval required**\n\n"
         "GitHub has paused the native CI run for this pull request. "
         "A maintainer with write access must review the changes and approve the workflow:\n\n"
         f"{links}\n\n"
         "After approval, the same commit is used to build **Specter firmware and its browser simulator**. "
         "Both results will be linked here.\n\n"
-        "A maintainer can also enter \`/build\` as a PR comment to request the combined "
+        "A maintainer can also enter `/build` as a PR comment to request the combined "
         "build manually without waiting for the native CI approval.\n\n"
         "**Experimental build:** Never use real funds or seed phrases in a PR preview.\n\n"
         f"{MARKER}\n<!-- specter-approval-sha:" + sha + " -->"
@@ -58,7 +58,7 @@ def live_pr_matches(number, sha, updated_at, token, request_fn=api):
     if (not isinstance(pr, dict) or pr.get("state") != "open" or
             pr.get("number") != number or
             (pr.get("head") or {}).get("sha") != sha or
-            (pr.get("base") or {}).get("repo", {}).get("full_name", "").lower() != TARGET_REPOSITORY):
+            ((pr.get("base") or {}).get("repo") or {}).get("full_name", "").lower() != TARGET_REPOSITORY):
         return False
     # Comments may update pr.updated_at, but an event must never be from the future.
     def parse(value):
@@ -94,7 +94,7 @@ def notify(number, sha, updated_at, token, login, request_fn=api, retries=8, sle
     # Do not overwrite a newer completed report for the same exact commit.
     for comment in owned:
         body = comment.get("body", "")
-        if (f"\`{sha[:7]}\`" in body and
+        if (f"`{sha[:7]}`" in body and
                 ("[Open browser simulator]" in body or "Latest build failed." in body)):
             return "already-reported"
     replace_managed_comment(
