@@ -28,7 +28,8 @@ def action_required_ci_runs(number, sha, token, request_fn=api):
                 run.get("head_sha") != sha or run.get("status") != "completed" or
                 run.get("conclusion") != "action_required" or
                 (run.get("repository") or {}).get("full_name", "").lower() != TARGET_REPOSITORY or
-                not str(run.get("path", "")).startswith(".github/workflows/test.yml@")):
+                not (run.get("path") == ".github/workflows/test.yml" or
+                     str(run.get("path", "")).startswith(".github/workflows/test.yml@"))):
             continue
         run_id = run.get("id")
         if type(run_id) is not int or run_id <= 0:
