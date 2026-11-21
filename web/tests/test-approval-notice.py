@@ -69,6 +69,8 @@ class ApprovalNoticeTests(unittest.TestCase):
         body = self.writes()[0][2]["body"]
         self.assertIn("https://github.com/cryptoadvance/specter-diy/actions/runs/12345", body)
         self.assertIn("/build", body)
+        self.assertIn("/build-auto", body)
+        self.assertIn("Closing and reopening", body)
         self.assertIn(MARKER, body)
         self.assertIn("firmware and its browser simulator", body)
 
