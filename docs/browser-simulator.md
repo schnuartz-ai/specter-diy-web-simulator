@@ -141,25 +141,31 @@ for the basic setup.
 
 ## Request validation and lifecycle
 
-Specter DIY's `pull_request_target` workflow handles PR open, synchronize,
-reopen, ready-for-review, and close events. Same-repository and fork PRs both
-start automatically after the dispatcher verifies the current PR and exact
-head SHA. Closing a PR always dispatches cleanup. The workflow reads only
-trusted event metadata and a script checked out from the protected default
-branch; it does not check out or execute PR code. It dispatches a unique request
-ID, base repository and exact base SHA/ref, head repository, PR number, exact
-head SHA/ref, action, and source `updated_at`. Closing a PR sends
-`action=delete`.
+Specter DIY's native `CI` workflow is the approval gate. When a PR
+CI run starts (`workflow_run: in_progress`), the trusted dispatcher validates
+the exact CI run and current PR head SHA, then sends the same validated
+`workflow_dispatch` request as before. First-time contributors may be blocked
+by GitHub's `action_required` status. A trusted `pull_request_target`
+dispatcher asks this repository's `approval.yml` to verify the blocked CI
+run, then posts the direct approval link via the same machine-user comment.
+It does not execute or check out PR code. Once CI is approved, the full
+firmware + WebAssembly build starts automatically. Closing the PR dispatches
+`action=delete` for preview and artifact cleanup.
 
-After a successful dispatch, the Specter workflow exits. It does not wait for
-the firmware or browser build. The simulator finalizer validates the live PR
-again before publication and before reporting. Its persistent state prevents a
-stale finalizer from replacing a newer result or comment.
+Maintainers may also post exactly `/build` (or `/Build`) on an open PR to
+start a new full build from its current head SHA, even after native CI expired;
+the dispatcher confirms the comment author has current write permission.
+The `Actions → Browser simulator preview → Run workflow` control accepts a PR
+number as an alternative. Manual builds do not retroactively change GitHub's
+native CI result. The trusted dispatcher has only metadata-read and limited
+Web Simulator dispatch rights, while PR-controlled code always runs without
+secrets or write access. A dispatched build does not wait on the Specter side.
 
-This workflow uses `pull_request_target`. Repository or organization Actions
-policy must permit that event for public repositories. A repository or
-organization administrator should verify the policy before GitHub's announced
-November 2, 2026 enforcement date.
+The early approval notice and final result use the **same** marked bot comment,
+updated in place and deduplicated. The approval notice is written only when the
+live PR and an actual blocked native CI run match the exact source SHA.
+Repository or organization Actions policy must allow the trusted
+`pull_request_target` and `workflow_run` events for this to work.
 
 The Web Simulator validates the paired base repository and compares the request
 to the live GitHub PR before building. Build requests must match an open PR's
@@ -167,7 +173,7 @@ base, head repository, branch, number, and exact SHA. The source checkout is by
 SHA, including submodules. The trusted finalizer validates the exact request,
 run identity, monotonic state, and live PR again before it reports the result.
 
-The trusted simulator finalizer writes a **single normal PR comment** through a
+The trusted simulator approval reporter or finalizer writes a **single normal PR comment** through a
 dedicated, non-collaborator **machine-user account** (for example,
 `specter-preview-bot`). The bot must have **only read access** to
 `cryptoadvance/specter-diy`: do not add it as a repository collaborator or
@@ -202,7 +208,7 @@ A classic PAT's `public_repo` scope is wider than PR comments, but it never
 grants repository permissions beyond the machine user's own. Because this user
 has no write access to Specter DIY, it cannot edit third-party PR descriptions
 or other users' comments. It may still perform ordinary GitHub public-user
-actions (such as opening its own issues). The bot token must be kept ONLY in
+actions (such as opening its own issues). The bot token must be kept ONLY in trusted approval/reporting jobs and
 the trusted finalizer; untrusted build, verification, and dispatch jobs must
 never receive it. Keep `WEB_SIMULATOR_DISPATCH_TOKEN` separately in the
 Specter DIY repository: it only dispatches the Web Simulator workflow.
