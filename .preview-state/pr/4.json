@@ -8,10 +8,10 @@
   "latest_request_id": "specter-pr-4-eee1ce81f7141cf6ce3daecb494355bb60d087b4-20261122140019-1",
   "latest_source_sha": "eee1ce81f7141cf6ce3daecb494355bb60d087b4",
   "latest_source_updated_at": "2026-11-22T08:30:41.000000Z",
-  "run_attempt": 1,
+  "run_attempt": 2,
   "simulator_repository": "schnuartz-ai/specter-diy-web-simulator",
   "simulator_sha": "8b7bd1eab17e35d503c18da10f392c93ed953988",
-  "status": "success",
+  "status": "failure",
   "successful_previews": [
     {
       "firmware_url": "https://github.com/schnuartz-ai/specter-diy-web-simulator/actions/runs/45030435133/artifacts/14757692147",
