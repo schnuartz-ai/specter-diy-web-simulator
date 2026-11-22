@@ -1,4 +1,5 @@
 import { validateBuildProvenance } from './build-provenance.js';
+import { isIsolatedPreviewRoute } from './preview-route.js';
 
 const $ = selector => document.querySelector(selector);
 const siteRoot = new URL('../', import.meta.url);
@@ -80,7 +81,7 @@ const virtualHostDetails = $('#virtual-host');
 const virtualHostStatus = $('#virtual-host-status');
 const virtualHostStatusText = $('#virtual-host-status-text');
 const virtualHostPreviewNote = $('#virtual-host-preview-note');
-const isolatedPreviewRoute = /(?:^|\/)pr\/\d+\/$/.test(siteRoot.pathname);
+const isolatedPreviewRoute = isIsolatedPreviewRoute(siteRoot.pathname);
 let virtualHostSocket;
 let virtualHostRetryTimer;
 let virtualHostClientId = crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -1172,8 +1173,6 @@ function formatBuildPresentation(manifest) {
     typeof manifest.fork === 'object' ? manifest.fork.repository : manifest.fork);
   const isFork = Boolean(forkValue) || manifest.is_fork === true || manifest.fork === true;
   const cleanVersion = versionLabel ? String(versionLabel).replace(/^v/i, '') : '';
-  // Show the exact firmware source revision on every build, not only when
-  // optional PR metadata is present (immutable PR previews usually omit it).
   const topLabel = ['GitHub', isFork && 'Fork', cleanVersion && `v${cleanVersion}`, prLabel,
     commit && commit.slice(0, 7)].filter(Boolean).join(' · ');
   const context = [
@@ -1190,8 +1189,6 @@ function updateBuildMetadata(manifest) {
   const buildPresentation = formatBuildPresentation(manifest);
   const sourceCommitLink = $('#source-commit-link');
   if (sourceCommitLink) {
-    // The label includes a commit ID: its link must resolve to that exact
-    // validated Specter source commit rather than just the repository homepage.
     sourceCommitLink.href = buildPresentation.commitUrl;
     sourceCommitLink.textContent = buildPresentation.topLabel;
   }
