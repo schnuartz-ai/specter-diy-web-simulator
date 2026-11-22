@@ -18,6 +18,17 @@ def job(name, next_name=None):
 
 
 class PreviewWorkflowContractTests(unittest.TestCase):
+    def test_preview_jobs_use_the_verified_ubuntu_24_04_runner(self):
+        for block in (
+            job("validate", "build"),
+            job("build", "trusted_runtime"),
+            job("trusted_runtime", "verify"),
+            job("verify", "finalize"),
+            job("finalize"),
+        ):
+            with self.subTest(block=block.splitlines()[0]):
+                self.assertIn("runs-on: ubuntu-24.04", block)
+
     def test_remote_service_dispatches_then_validates_live_pr(self):
         self.assertIn("workflow_dispatch:", WORKFLOW)
         self.assertNotIn("repository_dispatch:", WORKFLOW)
@@ -104,7 +115,7 @@ class PreviewWorkflowContractTests(unittest.TestCase):
 
     def test_trusted_javascript_is_built_from_base_on_a_separate_runner(self):
         runtime = job("trusted_runtime", "verify")
-        self.assertIn("runs-on: ubuntu-latest", runtime)
+        self.assertIn("runs-on: ubuntu-24.04", runtime)
         self.assertIn("contents: read", runtime)
         self.assertNotIn("contents: write", runtime)
         self.assertNotIn("secrets.", runtime)
@@ -132,7 +143,7 @@ class PreviewWorkflowContractTests(unittest.TestCase):
 
         verify = job("verify", "finalize")
         self.assertIn("needs: [validate, build, trusted_runtime]", verify)
-        self.assertIn("runs-on: ubuntu-latest", verify)
+        self.assertIn("runs-on: ubuntu-24.04", verify)
         self.assertIn("actions: read", verify)
         self.assertIn("contents: read", verify)
         self.assertIn("pull-requests: read", verify)
