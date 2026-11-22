@@ -54,7 +54,7 @@ permissions:
 jobs:
   validate:
     name: Validate paired Specter PR request
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: read
@@ -88,7 +88,7 @@ jobs:
     name: Build PR firmware and browser payload
     needs: validate
     if: needs.validate.outputs.action == 'build'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 180
     concurrency:
       group: preview-build-${{ github.repository }}-${{ needs.validate.outputs.pr_number }}
@@ -211,7 +211,7 @@ jobs:
     name: Build trusted JavaScript runtime from the PR base
     needs: validate
     if: needs.validate.outputs.action == 'build'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 180
     concurrency:
       group: preview-runtime-${{ github.repository }}-${{ needs.validate.outputs.pr_number }}
@@ -300,7 +300,7 @@ jobs:
     name: Verify the published preview on a clean runner
     needs: [validate, build, trusted_runtime]
     if: needs.validate.outputs.action == 'build'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     permissions:
       actions: read
@@ -437,7 +437,7 @@ jobs:
     name: Publish immutable preview state and PR result
     needs: [validate, build, trusted_runtime, verify]
     if: ${{ always() && needs.validate.result == 'success' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     environment:
       name: github-pages
