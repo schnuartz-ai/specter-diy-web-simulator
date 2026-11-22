@@ -5,9 +5,9 @@
   "head_ref": "codex/paired-preview-dispatch",
   "head_repository": "schnuartz-ai/specter-diy",
   "latest_action": "build",
-  "latest_request_id": "specter-pr-4-eee1ce81f7141cf6ce3daecb494355bb60d087b4-20261122082350-1",
+  "latest_request_id": "specter-pr-4-eee1ce81f7141cf6ce3daecb494355bb60d087b4-20261122134150-1",
   "latest_source_sha": "eee1ce81f7141cf6ce3daecb494355bb60d087b4",
-  "latest_source_updated_at": "2026-11-22T08:19:13.000000Z",
+  "latest_source_updated_at": "2026-11-22T08:30:41.000000Z",
   "run_attempt": 1,
   "simulator_repository": "schnuartz-ai/specter-diy-web-simulator",
   "simulator_sha": "98ca843bd770c3c54bf5346ba6b127ad06382f2e",
@@ -26,5 +26,5 @@
       "workflow_run_id": 37791917026
     }
   ],
-  "workflow_run_id": 45002619481
+  "workflow_run_id": 45028843735
 }
