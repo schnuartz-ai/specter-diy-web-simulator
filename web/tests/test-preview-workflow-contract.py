@@ -18,6 +18,17 @@ def job(name, next_name=None):
 
 
 class PreviewWorkflowContractTests(unittest.TestCase):
+    def test_preview_jobs_use_the_verified_ubuntu_24_04_runner(self):
+        for block in (
+            job("validate", "build"),
+            job("build", "trusted_runtime"),
+            job("trusted_runtime", "verify"),
+            job("verify", "finalize"),
+            job("finalize"),
+        ):
+            with self.subTest(block=block.splitlines()[0]):
+                self.assertIn("runs-on: ubuntu-24.04", block)
+
     def test_remote_service_dispatches_then_validates_live_pr(self):
         self.assertIn("workflow_dispatch:", WORKFLOW)
         self.assertNotIn("repository_dispatch:", WORKFLOW)
@@ -69,6 +80,7 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         self.assertIn("actions/deploy-pages@", finalize)
         self.assertIn("actions: write", finalize)
         self.assertIn("preview-publish-${{ github.repository }}", finalize)
+        self.assertIn("queue: max", finalize)
         self.assertIn("needs.validate.outputs.base_repository == 'cryptoadvance/specter-diy'", finalize)
         self.assertIn("SPECTER_PREVIEW_BOT_TOKEN: ${{ secrets.SPECTER_PREVIEW_BOT_TOKEN }}", finalize)
         self.assertIn("SPECTER_PREVIEW_BOT_LOGIN: ${{ vars.SPECTER_PREVIEW_BOT_LOGIN }}", finalize)
@@ -103,7 +115,7 @@ class PreviewWorkflowContractTests(unittest.TestCase):
 
     def test_trusted_javascript_is_built_from_base_on_a_separate_runner(self):
         runtime = job("trusted_runtime", "verify")
-        self.assertIn("runs-on: ubuntu-latest", runtime)
+        self.assertIn("runs-on: ubuntu-24.04", runtime)
         self.assertIn("contents: read", runtime)
         self.assertNotIn("contents: write", runtime)
         self.assertNotIn("secrets.", runtime)
@@ -131,7 +143,7 @@ class PreviewWorkflowContractTests(unittest.TestCase):
 
         verify = job("verify", "finalize")
         self.assertIn("needs: [validate, build, trusted_runtime]", verify)
-        self.assertIn("runs-on: ubuntu-latest", verify)
+        self.assertIn("runs-on: ubuntu-24.04", verify)
         self.assertIn("actions: read", verify)
         self.assertIn("contents: read", verify)
         self.assertIn("pull-requests: read", verify)
@@ -163,11 +175,17 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         request_tool = (ROOT / "web/tools/validate_preview_request.py").read_text()
         self.assertIn('headers["Authorization"] = f"Bearer {token}"', request_tool)
 
-    def test_timeout_and_superseded_build_contract(self):
+    def test_timeout_and_global_build_limits(self):
         build = job("build", "trusted_runtime")
+        runtime = job("trusted_runtime", "verify")
         finalize = job("finalize")
         self.assertIn("timeout-minutes: 180", build)
-        self.assertIn("cancel-in-progress: true", build)
+        for block, group in ((build, "preview-build-global-"),
+                             (runtime, "preview-runtime-global-")):
+            self.assertIn(group, block)
+            self.assertIn("cancel-in-progress: false", block)
+            self.assertIn("queue: max", block)
+            self.assertIn("Revalidate queued request", block)
         self.assertIn("timeout-minutes: 10", finalize)
         self.assertLess(180, 210)
 

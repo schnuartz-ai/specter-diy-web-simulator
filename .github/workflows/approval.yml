@@ -1,0 +1,45 @@
+name: Specter PR approval notice
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Specter DIY PR number
+        required: true
+        type: string
+      head_sha:
+        description: Exact PR source commit SHA
+        required: true
+        type: string
+      source_updated_at:
+        description: UTC PR update timestamp from the trusted dispatcher
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  approval_notice:
+    name: Post/update the single Specter preview comment
+    if: github.repository == 'cryptoadvance/specter-diy-web-simulator'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: preview-publish-${{ github.repository }}
+      cancel-in-progress: false
+      queue: max
+    steps:
+      - name: Checkout only trusted Web Simulator code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 pinned commit
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify native CI approval is needed and update the bot-owned PR comment
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
+          HEAD_SHA: ${{ inputs.head_sha }}
+          SOURCE_UPDATED_AT: ${{ inputs.source_updated_at }}
+          SPECTER_PREVIEW_BOT_TOKEN: ${{ secrets.SPECTER_PREVIEW_BOT_TOKEN }}
+          SPECTER_PREVIEW_BOT_LOGIN: ${{ vars.SPECTER_PREVIEW_BOT_LOGIN }}
+        run: python3 web/tools/report_approval.py

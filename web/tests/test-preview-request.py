@@ -99,6 +99,7 @@ class PreviewRequestTests(unittest.TestCase):
             (pull(sha="c" * 40), "head SHA"),
             (pull(repository="mallory/specter-diy"), "head repository"),
             (pull(state="closed"), "open PR"),
+            (dict(pull(), draft=True), "non-draft PR"),
         ]
         for live, message in cases:
             with self.subTest(message=message):
