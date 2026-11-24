@@ -225,12 +225,12 @@ Specter DIY repository: it only dispatches the Web Simulator workflow.
 After this workflow change is merged into the production Web Simulator, its
 trusted status jobs can report the firmware result to the exact Specter PR head
 commit as the commit status `specter/firmware-build`. It is `pending` before
-the untrusted build starts, succeeds only after Specter's native firmware tests
-and both `make unix` and `make disco` pass, and fails if those steps do not
-complete. Browser runtime tests and Pages publishing remain part of the preview
-result/comment; they do not change this firmware-only status. The status API
-receives the validated 40-character PR head SHA, never a branch name or a
-synthetic merge SHA.
+the untrusted build starts, succeeds only after Specter's native firmware tests,
+both `make unix` and `make disco`, and the exact-SHA `.bin`/`.hex` provenance
+check pass. It fails if those steps do not complete. Browser runtime tests and
+Pages publishing remain part of the preview result/comment; they do not change
+this firmware-only status. The status API receives the validated 40-character
+PR head SHA, never a branch name or a synthetic merge SHA.
 
 Set up a dedicated GitHub App for this one status integration:
 
@@ -268,11 +268,13 @@ Set up a dedicated GitHub App for this one status integration:
    required as well.
 
 The branch rule belongs on Specter DIY, while the App key and variables belong
-in the Web Simulator. A missing or failed status blocks merging once the rule
-is required. Disabling `SPECTER_FIRMWARE_STATUS_ENABLED` therefore cannot make a
-PR pass; it leaves the required status absent. This integration reports a
-commit status rather than a Check Run because the check only needs to represent
-the exact-SHA firmware result.
+in the Web Simulator. Once required, a missing, pending, or failed status blocks
+merging. If the final reporter cannot update GitHub, the missing or pending
+status remains and blocks the PR. Disabling `SPECTER_FIRMWARE_STATUS_ENABLED`
+stops future reports but does not erase a success already recorded for the same
+SHA; a new SHA without its own successful status remains blocked. This
+integration reports a commit status rather than a Check Run because the check
+only needs to represent the exact-SHA firmware result.
 
 ### Production merge prerequisite: protect `main`
 

@@ -9,21 +9,24 @@ ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = (ROOT / ".github/workflows/preview.yml").read_text(encoding="utf-8")
 
 
-def job(name, next_name=None):
-    start = WORKFLOW.index(f"  {name}:\n")
-    if next_name:
-        end = WORKFLOW.index(f"  {next_name}:\n", start + 1)
-        return WORKFLOW[start:end]
-    return WORKFLOW[start:]
+def job(name):
+    headings = list(re.finditer(r"^  ([A-Za-z0-9_-]+):$", WORKFLOW, re.MULTILINE))
+    for index, heading in enumerate(headings):
+        if heading.group(1) == name:
+            end = headings[index + 1].start() if index + 1 < len(headings) else len(WORKFLOW)
+            return WORKFLOW[heading.start():end]
+    raise ValueError(f"workflow job not found: {name}")
 
 
 class PreviewWorkflowContractTests(unittest.TestCase):
     def test_preview_jobs_use_the_verified_ubuntu_24_04_runner(self):
         for block in (
-            job("validate", "build"),
-            job("build", "trusted_runtime"),
-            job("trusted_runtime", "verify"),
-            job("verify", "finalize"),
+            job("validate"),
+            job("report_firmware_pending"),
+            job("build"),
+            job("report_firmware_result"),
+            job("trusted_runtime"),
+            job("verify"),
             job("finalize"),
         ):
             with self.subTest(block=block.splitlines()[0]):
@@ -40,7 +43,7 @@ class PreviewWorkflowContractTests(unittest.TestCase):
             self.assertIn(f"      {field}:", WORKFLOW)
 
     def test_untrusted_build_has_read_only_permissions_and_no_trusted_tests(self):
-        build = job("build", "trusted_runtime")
+        build = job("build")
         self.assertIn("permissions:\n      contents: read", build)
         self.assertNotIn("contents: write", build)
         self.assertNotIn("actions: write", build)
@@ -49,7 +52,7 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("secrets.", build)
         self.assertIn("persist-credentials: false", build)
         self.assertIn("ref: ${{ needs.validate.outputs.head_sha }}", build)
-        self.assertIn("nix develop -c make disco", build)
+        self.assertIn("nix develop -c make unix disco", build)
         self.assertIn("build-browser.sh", build)
         self.assertIn("test-browser-manifest.py", build)
         self.assertLess(
@@ -85,18 +88,28 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         self.assertIn("SPECTER_PREVIEW_BOT_TOKEN: ${{ secrets.SPECTER_PREVIEW_BOT_TOKEN }}", finalize)
         self.assertIn("SPECTER_PREVIEW_BOT_LOGIN: ${{ vars.SPECTER_PREVIEW_BOT_LOGIN }}", finalize)
         self.assertIn("python3 simulator/web/tools/report_preview.py", finalize)
-        self.assertNotIn("create-github-app-token", WORKFLOW)
+        self.assertEqual(WORKFLOW.count("actions/create-github-app-token@"), 2)
         self.assertNotIn("permission-pull-requests: write", WORKFLOW)
         self.assertNotIn("SPECTER_PREVIEW_APP_", WORKFLOW)
         self.assertNotIn("issues: write", WORKFLOW)
         self.assertNotRegex(WORKFLOW, re.compile(r"^      pull-requests: write$", re.MULTILINE))
-        for trusted_or_untrusted in (job("build", "trusted_runtime"),
-                                     job("trusted_runtime", "verify"),
-                                     job("verify", "finalize"),
-                                     job("validate", "build")):
-            self.assertNotIn("SPECTER_PREVIEW_BOT_TOKEN", trusted_or_untrusted)
-            self.assertNotIn("secrets.SPECTER_PREVIEW_BOT_TOKEN", trusted_or_untrusted)
-        self.assertIn("actions: read", job("verify", "finalize"))
+        status_jobs = (job("report_firmware_pending"), job("report_firmware_result"))
+        for status_job in status_jobs:
+            self.assertIn("environment: firmware-status", status_job)
+            self.assertIn("actions/create-github-app-token@", status_job)
+            self.assertIn("permission-statuses: write", status_job)
+            self.assertIn("SPECTER_FIRMWARE_STATUS_APP_PRIVATE_KEY", status_job)
+        non_status_jobs = (job("validate"), job("build"), job("trusted_runtime"),
+                           job("verify"), finalize)
+        for trusted_or_untrusted in non_status_jobs:
+            self.assertNotIn("create-github-app-token", trusted_or_untrusted)
+            self.assertNotIn("SPECTER_FIRMWARE_STATUS_APP_PRIVATE_KEY", trusted_or_untrusted)
+        for job_without_machine_token in (
+                job("validate"), *status_jobs, job("build"),
+                job("trusted_runtime"), job("verify")):
+            self.assertNotIn("SPECTER_PREVIEW_BOT_TOKEN", job_without_machine_token)
+            self.assertNotIn("secrets.SPECTER_PREVIEW_BOT_TOKEN", job_without_machine_token)
+        self.assertIn("actions: read", job("verify"))
         self.assertNotIn("repository: ${{ needs.validate.outputs.head_repository }}", finalize)
         self.assertNotIn("nix develop", finalize)
         self.assertNotIn("npm ", finalize)
@@ -114,8 +127,11 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         self.assertIn("report_capacity_evictions", reporter)
 
     def test_trusted_javascript_is_built_from_base_on_a_separate_runner(self):
-        runtime = job("trusted_runtime", "verify")
+        runtime = job("trusted_runtime")
         self.assertIn("runs-on: ubuntu-24.04", runtime)
+        self.assertIn("needs: [validate, report_firmware_pending]", runtime)
+        self.assertIn("needs.report_firmware_pending.result == 'success'", runtime)
+        self.assertIn("needs.report_firmware_pending.result == 'skipped'", runtime)
         self.assertIn("contents: read", runtime)
         self.assertNotIn("contents: write", runtime)
         self.assertNotIn("secrets.", runtime)
@@ -132,7 +148,7 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("requirements.txt", runtime)
         self.assertIn("name: trusted-micropython-runtime", runtime)
 
-        build = job("build", "trusted_runtime")
+        build = job("build")
         self.assertIn("package_browser.py", build)
         self.assertIn('ARTIFACTS = ("micropython.wasm", "micropython.data")',
                       (ROOT / "web/tools/package_browser.py").read_text())
@@ -141,7 +157,7 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         self.assertIn("name: trusted-micropython-runtime", finalize)
         self.assertIn("replace_glue(extracted", (ROOT / "web/tools/publish_preview.py").read_text())
 
-        verify = job("verify", "finalize")
+        verify = job("verify")
         self.assertIn("needs: [validate, build, trusted_runtime]", verify)
         self.assertIn("runs-on: ubuntu-24.04", verify)
         self.assertIn("actions: read", verify)
@@ -161,11 +177,14 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         self.assertIn("test-usb-transport.mjs", verify)
         self.assertIn("go test ./...", verify)
         self.assertIn("needs.verify.result == 'success'", finalize)
+        self.assertIn("!cancelled()", verify)
+        self.assertIn("needs.build.result == 'success'", verify)
+        self.assertIn("needs.trusted_runtime.result == 'success'", verify)
 
     def test_live_pr_metadata_fetch_is_authenticated_in_trusted_jobs(self):
-        validate = job("validate", "build")
+        validate = job("validate")
         finalize = job("finalize")
-        verify = job("verify", "finalize")
+        verify = job("verify")
         self.assertIn("pull-requests: read", validate)
         self.assertIn("GH_TOKEN: ${{ github.token }}", validate)
         self.assertIn("pull-requests: read", verify)
@@ -176,8 +195,8 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         self.assertIn('headers["Authorization"] = f"Bearer {token}"', request_tool)
 
     def test_timeout_and_global_build_limits(self):
-        build = job("build", "trusted_runtime")
-        runtime = job("trusted_runtime", "verify")
+        build = job("build")
+        runtime = job("trusted_runtime")
         finalize = job("finalize")
         self.assertIn("timeout-minutes: 180", build)
         for block, group in ((build, "preview-build-global-"),
@@ -190,7 +209,7 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         self.assertLess(180, 210)
 
     def test_emsdk_is_pinned_and_summary_uses_printf(self):
-        build = job("build", "trusted_runtime")
+        build = job("build")
         pin = (ROOT / ".preview-config/emsdk-commit").read_text().strip()
         self.assertRegex(pin, r"^[a-f0-9]{40}$")
         self.assertIn("fetch --depth 1 origin refs/tags/3.1.74", build)
@@ -256,9 +275,10 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         self.assertNotIn(".preview-state", staging)
 
     def test_only_latest_firmware_artifact_is_retained_per_pr(self):
-        build = job("build", "trusted_runtime")
+        build = job("build")
         finalize = job("finalize")
         self.assertIn("retention-days: 90", build)
+        self.assertIn("firmware_build_result: ${{ steps.record_firmware.outcome }}", build)
         self.assertIn(
             "name: ${{ steps.record_firmware.outputs.firmware_name }}",
             build,
