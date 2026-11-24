@@ -171,6 +171,13 @@ def replace_managed_comment(repository, number, comments, expected_login, token,
         return len(ids)
     if owned:
         survivor = owned[0]
+        # This display is not authorization: the dispatcher revalidates the
+        # referenced maintainer command and current permissions on every build.
+        blocks = re.findall(r"<!-- specter-auto-begin -->\n.*?\n<!-- specter-auto-end -->", survivor["body"], re.DOTALL)
+        if len(blocks) > 1:
+            raise ValueError("Duplicate auto-mode blocks")
+        if blocks:
+            body = body.rstrip() + "\n\n" + blocks[0]
         if survivor["body"] != body:
             response = request_fn(
                 "PATCH", f"/repos/{repository}/issues/comments/{survivor['id']}",

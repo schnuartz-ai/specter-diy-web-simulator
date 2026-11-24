@@ -129,6 +129,17 @@ class MachineUserReporterTests(unittest.TestCase):
         self.invoke()
         self.assertEqual(self.writes(), [("POST", f"/repos/{BASE}/issues/12/comments")])
 
+    def test_build_update_preserves_auto_mode_display(self):
+        req = request()
+        self.state_path.write_text(json.dumps(state(req)))
+        block = ("<!-- specter-auto-begin -->\n**Build mode:** Auto · Approved by [@alice]"
+                 "(https://github.com/cryptoadvance/specter-diy/pull/12#issuecomment-42)\n"
+                 "<!-- specter-auto-mode:42 -->\n<!-- specter-auto-end -->")
+        self.comments[0]["body"] += "\n" + block
+        self.invoke()
+        body = [d["body"] for a, _, _, d in self.calls if a == "PATCH"][0]
+        self.assertIn(block, body)
+
     def test_extra_owned_marked_duplicate_is_removed_after_patch(self):
         req = request()
         self.state_path.write_text(json.dumps(state(req)))
