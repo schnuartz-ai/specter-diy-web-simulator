@@ -158,6 +158,8 @@ def validate_request(inputs: dict, service_repository: str, token: str,
     if request["action"] == "build":
         if pr.get("state") != "open":
             raise ValueError("Build requests require an open PR")
+        if pr.get("draft") is True:
+            raise ValueError("Build requests require a non-draft PR")
         live_repo = (head.get("repo") or {}).get("full_name", "")
         if live_repo.lower() != request["head_repository"].lower():
             raise ValueError("PR head repository no longer matches the request")

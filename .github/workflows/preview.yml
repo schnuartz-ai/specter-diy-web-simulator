@@ -91,8 +91,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     concurrency:
-      group: preview-build-${{ github.repository }}-${{ needs.validate.outputs.pr_number }}
-      cancel-in-progress: true
+      group: preview-build-global-${{ github.repository }}
+      cancel-in-progress: false
+      queue: max
     permissions:
       contents: read
     outputs:
@@ -122,6 +123,12 @@ jobs:
           ref: ${{ github.sha }}
           path: simulator
           persist-credentials: false
+      - name: Revalidate queued request before running PR code
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          PREVIEW_INPUTS_JSON: ${{ toJSON(inputs) }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 simulator/web/tools/validate_preview_request.py
       - name: Check out exact Specter PR source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 pinned commit
         with:
@@ -214,8 +221,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     concurrency:
-      group: preview-runtime-${{ github.repository }}-${{ needs.validate.outputs.pr_number }}
-      cancel-in-progress: true
+      group: preview-runtime-global-${{ github.repository }}
+      cancel-in-progress: false
+      queue: max
     permissions:
       contents: read
     env:
@@ -236,6 +244,12 @@ jobs:
           ref: ${{ github.sha }}
           path: simulator
           persist-credentials: false
+      - name: Revalidate queued request before building runtime
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          PREVIEW_INPUTS_JSON: ${{ toJSON(inputs) }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 simulator/web/tools/validate_preview_request.py
       - name: Check out exact validated PR base source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 pinned commit
         with:

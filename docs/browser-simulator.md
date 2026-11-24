@@ -152,6 +152,12 @@ It does not execute or check out PR code. Once CI is approved, the full
 firmware + WebAssembly build starts automatically. Closing the PR dispatches
 `action=delete` for preview and artifact cleanup.
 
+At most one firmware/browser build and one trusted-runtime build run at a time
+across all PRs. GitHub's bounded concurrency queues can reject excess work;
+maintainers may retry a preview. Queued requests are revalidated when each job
+starts, and drafts cannot start or publish builds. Converting an existing PR to
+draft does not remove an already published preview; closing it requests cleanup.
+
 Maintainers may also post exactly `/build` (or `/Build`) on an open PR to
 start a new full build from its current head SHA, even after native CI expired;
 the dispatcher confirms the comment author has current write permission.

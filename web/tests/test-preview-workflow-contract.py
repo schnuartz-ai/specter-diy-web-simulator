@@ -175,11 +175,17 @@ class PreviewWorkflowContractTests(unittest.TestCase):
         request_tool = (ROOT / "web/tools/validate_preview_request.py").read_text()
         self.assertIn('headers["Authorization"] = f"Bearer {token}"', request_tool)
 
-    def test_timeout_and_superseded_build_contract(self):
+    def test_timeout_and_global_build_limits(self):
         build = job("build", "trusted_runtime")
+        runtime = job("trusted_runtime", "verify")
         finalize = job("finalize")
         self.assertIn("timeout-minutes: 180", build)
-        self.assertIn("cancel-in-progress: true", build)
+        for block, group in ((build, "preview-build-global-"),
+                             (runtime, "preview-runtime-global-")):
+            self.assertIn(group, block)
+            self.assertIn("cancel-in-progress: false", block)
+            self.assertIn("queue: max", block)
+            self.assertIn("Revalidate queued request", block)
         self.assertIn("timeout-minutes: 10", finalize)
         self.assertLess(180, 210)
 
