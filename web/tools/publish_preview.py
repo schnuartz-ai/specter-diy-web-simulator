@@ -379,7 +379,7 @@ def _validate_live_pr(request: dict, token: str, pull_fetcher) -> bool:
         return pr.get("state") == "closed" and (
             not live_repository or not request["head_repository"] or
             live_repository.lower() == request["head_repository"].lower())
-    return (pr.get("state") == "open" and
+    return (pr.get("state") == "open" and pr.get("draft") is not True and
             live_repository.lower() == request["head_repository"].lower() and
             head.get("ref") == request["head_ref"])
 

@@ -54,7 +54,7 @@ permissions:
 jobs:
   validate:
     name: Validate paired Specter PR request
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: read
@@ -88,11 +88,12 @@ jobs:
     name: Build PR firmware and browser payload
     needs: validate
     if: needs.validate.outputs.action == 'build'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 180
     concurrency:
-      group: preview-build-${{ github.repository }}-${{ needs.validate.outputs.pr_number }}
-      cancel-in-progress: true
+      group: preview-build-global-${{ github.repository }}
+      cancel-in-progress: false
+      queue: max
     permissions:
       contents: read
     outputs:
@@ -122,6 +123,12 @@ jobs:
           ref: ${{ github.sha }}
           path: simulator
           persist-credentials: false
+      - name: Revalidate queued request before running PR code
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          PREVIEW_INPUTS_JSON: ${{ toJSON(inputs) }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 simulator/web/tools/validate_preview_request.py
       - name: Check out exact Specter PR source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 pinned commit
         with:
@@ -164,9 +171,11 @@ jobs:
           make test
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@da36cb69b1c3247ad7a1f931ebfd954a1105ef14 # v14
-      - name: Build Specter firmware from the verified source SHA
+      - name: Build Unix simulator and STM32 firmware from the verified source SHA
         working-directory: specter-diy
-        run: nix develop -c make disco
+        run: |
+          nix develop -c make unix
+          nix develop -c make disco
       - name: Record and stage firmware provenance
         id: record_firmware
         run: python3 simulator/web/tools/record_firmware.py
@@ -209,11 +218,12 @@ jobs:
     name: Build trusted JavaScript runtime from the PR base
     needs: validate
     if: needs.validate.outputs.action == 'build'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 180
     concurrency:
-      group: preview-runtime-${{ github.repository }}-${{ needs.validate.outputs.pr_number }}
-      cancel-in-progress: true
+      group: preview-runtime-global-${{ github.repository }}
+      cancel-in-progress: false
+      queue: max
     permissions:
       contents: read
     env:
@@ -234,6 +244,12 @@ jobs:
           ref: ${{ github.sha }}
           path: simulator
           persist-credentials: false
+      - name: Revalidate queued request before building runtime
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          PREVIEW_INPUTS_JSON: ${{ toJSON(inputs) }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 simulator/web/tools/validate_preview_request.py
       - name: Check out exact validated PR base source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 pinned commit
         with:
@@ -298,7 +314,7 @@ jobs:
     name: Verify the published preview on a clean runner
     needs: [validate, build, trusted_runtime]
     if: needs.validate.outputs.action == 'build'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     permissions:
       actions: read
@@ -435,7 +451,7 @@ jobs:
     name: Publish immutable preview state and PR result
     needs: [validate, build, trusted_runtime, verify]
     if: ${{ always() && needs.validate.result == 'success' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     environment:
       name: github-pages
