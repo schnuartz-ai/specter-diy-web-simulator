@@ -84,10 +84,54 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python3 web/tools/validate_preview_request.py
 
+  report_firmware_pending:
+    name: Report Specter firmware status pending
+    needs: validate
+    if: >-
+      needs.validate.result == 'success' &&
+      needs.validate.outputs.action == 'build' &&
+      needs.validate.outputs.base_repository == 'cryptoadvance/specter-diy' &&
+      vars.SPECTER_FIRMWARE_STATUS_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: firmware-status
+    permissions:
+      contents: read
+    steps:
+      - name: Check out trusted Web Simulator status reporter
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 pinned commit
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Create least-privilege Specter status token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SPECTER_FIRMWARE_STATUS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SPECTER_FIRMWARE_STATUS_APP_PRIVATE_KEY }}
+          owner: cryptoadvance
+          repositories: specter-diy
+          permission-statuses: write
+      - name: Set the exact source commit status to pending
+        env:
+          ACTION: ${{ needs.validate.outputs.action }}
+          BASE_REPOSITORY: ${{ needs.validate.outputs.base_repository }}
+          HEAD_SHA: ${{ needs.validate.outputs.head_sha }}
+          PR_NUMBER: ${{ needs.validate.outputs.pr_number }}
+          SIMULATOR_REPOSITORY: ${{ github.repository }}
+          STATUS_STATE: pending
+          STATUS_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: python3 web/tools/report_firmware_status.py
+
   build:
     name: Build PR firmware and browser payload
-    needs: validate
-    if: needs.validate.outputs.action == 'build'
+    needs: [validate, report_firmware_pending]
+    if: >-
+      ${{ !cancelled() &&
+      needs.validate.result == 'success' &&
+      needs.validate.outputs.action == 'build' &&
+      (needs.report_firmware_pending.result == 'success' ||
+       needs.report_firmware_pending.result == 'skipped') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     concurrency:
@@ -99,6 +143,7 @@ jobs:
     outputs:
       firmware_url: ${{ steps.firmware.outputs.artifact-url }}
       firmware_name: ${{ steps.record_firmware.outputs.firmware_name }}
+      firmware_build_result: ${{ steps.firmware_status.outputs.result }}
     env:
       BASE_REPOSITORY: ${{ needs.validate.outputs.base_repository }}
       BASE_SHA: ${{ needs.validate.outputs.base_sha }}
@@ -176,6 +221,9 @@ jobs:
         run: |
           nix develop -c make unix
           nix develop -c make disco
+      - name: Mark validated firmware build complete
+        id: firmware_status
+        run: echo "result=success" >> "$GITHUB_OUTPUT"
       - name: Record and stage firmware provenance
         id: record_firmware
         run: python3 simulator/web/tools/record_firmware.py
@@ -213,6 +261,46 @@ jobs:
           path: firmware-artifact/
           if-no-files-found: error
           retention-days: 90
+
+  report_firmware_result:
+    name: Report Specter firmware build result
+    needs: [validate, report_firmware_pending, build]
+    if: >-
+      ${{ always() &&
+      needs.validate.result == 'success' &&
+      needs.validate.outputs.action == 'build' &&
+      needs.validate.outputs.base_repository == 'cryptoadvance/specter-diy' &&
+      vars.SPECTER_FIRMWARE_STATUS_ENABLED == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: firmware-status
+    permissions:
+      contents: read
+    steps:
+      - name: Check out trusted Web Simulator status reporter
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 pinned commit
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Create least-privilege Specter status token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SPECTER_FIRMWARE_STATUS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SPECTER_FIRMWARE_STATUS_APP_PRIVATE_KEY }}
+          owner: cryptoadvance
+          repositories: specter-diy
+          permission-statuses: write
+      - name: Set the firmware result on the exact source commit
+        env:
+          ACTION: ${{ needs.validate.outputs.action }}
+          BASE_REPOSITORY: ${{ needs.validate.outputs.base_repository }}
+          HEAD_SHA: ${{ needs.validate.outputs.head_sha }}
+          PR_NUMBER: ${{ needs.validate.outputs.pr_number }}
+          SIMULATOR_REPOSITORY: ${{ github.repository }}
+          STATUS_STATE: ${{ needs.build.outputs.firmware_build_result == 'success' && 'success' || 'failure' }}
+          STATUS_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: python3 web/tools/report_firmware_status.py
 
   trusted_runtime:
     name: Build trusted JavaScript runtime from the PR base

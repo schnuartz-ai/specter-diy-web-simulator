@@ -13,6 +13,7 @@ specter-diy PR event
                                                        ├─ validate live PR
                                                        ├─ untrusted runner: firmware + WASM/data + tests
                                                        ├─ fresh trusted runner: JS from exact base SHA
+                                                       ├─ GitHub App reports firmware status on exact source SHA
                                                        ├─ finalizer: validate and combine artifacts
                                                        ├─ publish immutable Pages preview + trusted state
                                                        └─ machine user updates one marked PR comment
@@ -218,6 +219,60 @@ actions (such as opening its own issues). The bot token must be kept ONLY in tru
 the trusted finalizer; untrusted build, verification, and dispatch jobs must
 never receive it. Keep `WEB_SIMULATOR_DISPATCH_TOKEN` separately in the
 Specter DIY repository: it only dispatches the Web Simulator workflow.
+
+### Required firmware status for Specter DIY
+
+After this workflow change is merged into the production Web Simulator, its
+trusted status jobs can report the firmware result to the exact Specter PR head
+commit as the commit status `specter/firmware-build`. It is `pending` before
+the untrusted build starts, succeeds only after Specter's native firmware tests
+and both `make unix` and `make disco` pass, and fails if those steps do not
+complete. Browser runtime tests and Pages publishing remain part of the preview
+result/comment; they do not change this firmware-only status. The status API
+receives the validated 40-character PR head SHA, never a branch name or a
+synthetic merge SHA.
+
+Set up a dedicated GitHub App for this one status integration:
+
+1. An owner of the `cryptoadvance` organization creates an organization-owned
+   GitHub App named **Specter Firmware Status**. No webhook URL or subscribed
+   events are needed; disable the webhook.
+2. Under **Repository permissions**, grant only **Commit statuses: Read and
+   write**. Leave organization and account permissions unset, and keep the
+   default read-only Metadata permission. The workflow mints a short-lived
+   installation token restricted again to `cryptoadvance/specter-diy` and
+   `statuses: write`.
+3. Install the App on the `cryptoadvance` organization and select **Only select
+   repositories → specter-diy**. Do not install it on the Web Simulator or on
+   contributor forks.
+4. Generate an App private key. In the production Web Simulator repository,
+   create **Settings → Environments → New environment** named
+   `firmware-status`. Set deployment branches and tags to **Selected branches
+   and tags**, with only the Web Simulator default branch (`main`) allowed. Do
+   not add required reviewers, so automatic status updates do not pause for
+   manual approval.
+   Add the private key as the environment secret
+   `SPECTER_FIRMWARE_STATUS_APP_PRIVATE_KEY`. Do not save this key as a
+   repository-wide secret.
+5. In the production Web Simulator repository's **Settings → Secrets and
+   variables → Actions → Variables**, add
+   `SPECTER_FIRMWARE_STATUS_APP_CLIENT_ID` with the App's Client ID. Set
+   `SPECTER_FIRMWARE_STATUS_ENABLED` to the exact value `true` only after the
+   App is installed and the environment secret and branch restriction are in
+   place.
+6. After one production preview has reported the status, configure protection
+   for `master` in `cryptoadvance/specter-diy` (**Settings → Branches**, or its
+   repository ruleset). Enable **Require status checks to pass before merging**;
+   add `specter/firmware-build` and choose **Specter Firmware Status** as the
+   expected source App. Keep the repository's existing native CI checks
+   required as well.
+
+The branch rule belongs on Specter DIY, while the App key and variables belong
+in the Web Simulator. A missing or failed status blocks merging once the rule
+is required. Disabling `SPECTER_FIRMWARE_STATUS_ENABLED` therefore cannot make a
+PR pass; it leaves the required status absent. This integration reports a
+commit status rather than a Check Run because the check only needs to represent
+the exact-SHA firmware result.
 
 ### Production merge prerequisite: protect `main`
 
