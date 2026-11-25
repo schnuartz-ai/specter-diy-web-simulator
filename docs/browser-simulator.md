@@ -225,12 +225,16 @@ Specter DIY repository: it only dispatches the Web Simulator workflow.
 After this workflow change is merged into the production Web Simulator, its
 trusted status jobs can report the firmware result to the exact Specter PR head
 commit as the commit status `specter/firmware-build`. It is `pending` before
-the untrusted build starts, succeeds only after Specter's native firmware tests,
-both `make unix` and `make disco`, and the exact-SHA `.bin`/`.hex` provenance
-check pass. It fails if those steps do not complete. Browser runtime tests and
-Pages publishing remain part of the preview result/comment; they do not change
-this firmware-only status. The status API receives the validated 40-character
-PR head SHA, never a branch name or a synthetic merge SHA.
+the untrusted build starts. The firmware status confirms that the native tests
+and firmware builds completed successfully for the validated PR commit. The
+build job checks the expected checkout SHA, verifies that the generated `.bin`
+and `.hex` artifacts are present and non-empty, and records their SHA-256
+hashes. These hashes identify the generated artifacts but do not constitute
+independent build verification or a firmware security attestation. The status
+fails if those steps do not complete. Browser runtime tests and Pages publishing
+remain part of the preview result/comment; they do not change this firmware-only
+status. The status API receives the validated 40-character PR head SHA, never a
+branch name or a synthetic merge SHA.
 
 Set up a dedicated GitHub App for this one status integration:
 
